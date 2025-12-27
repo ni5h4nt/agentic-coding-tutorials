@@ -1,26 +1,46 @@
-# hello_world_cli
+# md_convert
 
-A simple CLI that greets the user with 'Hello, World!'
+Convert Markdown files to HTML with syntax highlighting for code blocks
 
 ## Installation
 
 ```bash
-pip install hello_world_cli
+pip install md_convert
 ```
 
 ## Usage
 
 ```bash
-hello_world_cli --help
+md_convert --help
 ```
 
 ## Commands
 
-### greet
+### convert
 
-Outputs a greeting message
+Convert a Markdown file to HTML
 
 ```bash
-hello_world_cli greet --help
+md_convert convert --help
 ```
 
+### batch
+
+Convert multiple Markdown files at once
+
+```bash
+md_convert batch --help
+```
+
+### themes
+
+List available syntax highlighting themes
+
+```bash
+md_convert themes --help
+```
+
+## Global Options
+
+- `-v, --verbose`: Enable verbose output
+- `-q, --quiet`: Suppress all output except errors

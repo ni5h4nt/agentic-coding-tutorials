@@ -1,14 +1,17 @@
 [project]
-name = "hello_world_cli"
+name = "md_convert"
 version = "0.1.0"
-description = "A simple CLI that greets the user with 'Hello, World!'"
+description = "Convert Markdown files to HTML with syntax highlighting for code blocks"
 requires-python = ">=3.11"
 dependencies = [
     "click>=8.1",
+    "markdown",
+    "pygments",
+    "pytest>=9.0.2",
 ]
 
 [project.scripts]
-hello_world_cli = "hello_world_cli.cli:main"
+md_convert = "md_convert.cli:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
