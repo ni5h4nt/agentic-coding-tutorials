@@ -109,6 +109,203 @@
         .mermaid .edgePath path {
             stroke-width: 2px !important;
         }
+
+        /* Mermaid Walkthrough Animation Styles */
+        .mermaid-walkthrough {
+            position: relative;
+        }
+        .mermaid-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        .dark .mermaid-controls {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: #475569;
+        }
+        .mermaid-controls button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.375rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .dark .mermaid-controls button {
+            background: #334155;
+            border-color: #475569;
+            color: #94a3b8;
+        }
+        .mermaid-controls button:hover {
+            background: #f1f5f9;
+            color: #6366f1;
+            border-color: #6366f1;
+        }
+        .dark .mermaid-controls button:hover {
+            background: #475569;
+            color: #818cf8;
+            border-color: #818cf8;
+        }
+        .mermaid-controls button.active {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+        .mermaid-controls button svg {
+            width: 1rem;
+            height: 1rem;
+        }
+        .mermaid-controls button svg.hidden {
+            display: none;
+        }
+        .mermaid-step-indicator {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-left: 0.5rem;
+            font-weight: 500;
+        }
+        .dark .mermaid-step-indicator {
+            color: #94a3b8;
+        }
+        .mermaid-step-description {
+            flex: 1;
+            font-size: 0.8125rem;
+            color: #475569;
+            margin-left: 0.75rem;
+            padding-left: 0.75rem;
+            border-left: 2px solid #e2e8f0;
+            min-height: 1.25rem;
+        }
+        .dark .mermaid-step-description {
+            color: #94a3b8;
+            border-color: #475569;
+        }
+        .mermaid-kbd-hint {
+            font-size: 0.625rem;
+            color: #94a3b8;
+            margin-left: auto;
+            display: flex;
+            gap: 0.25rem;
+        }
+        .dark .mermaid-kbd-hint {
+            color: #64748b;
+        }
+        .mermaid-kbd-hint kbd {
+            padding: 0.125rem 0.375rem;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.25rem;
+            font-family: inherit;
+            font-size: 0.625rem;
+        }
+        .dark .mermaid-kbd-hint kbd {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        /* Node animation states */
+        .mermaid.walkthrough-active .node,
+        .mermaid.walkthrough-active .edgePath,
+        .mermaid.walkthrough-active .edgePaths > g,
+        .mermaid.walkthrough-active [class*="edge"] {
+            opacity: 0.25;
+            transition: opacity 0.3s ease;
+        }
+        .mermaid.walkthrough-active .node.highlighted,
+        .mermaid.walkthrough-active g.highlighted {
+            opacity: 1 !important;
+        }
+        .mermaid.walkthrough-active .edgePath.highlighted path,
+        .mermaid.walkthrough-active .highlighted path,
+        .mermaid.walkthrough-active path.highlighted {
+            opacity: 1 !important;
+            stroke-width: 3px !important;
+        }
+        /* Use filter for glow effect instead of transform (avoids SVG position issues) */
+        .mermaid.walkthrough-active .node.highlighted rect,
+        .mermaid.walkthrough-active .node.highlighted polygon,
+        .mermaid.walkthrough-active .node.highlighted circle,
+        .mermaid.walkthrough-active .node.highlighted path,
+        .mermaid.walkthrough-active .highlighted rect,
+        .mermaid.walkthrough-active .highlighted polygon {
+            filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.6)) drop-shadow(0 0 12px rgba(99, 102, 241, 0.3));
+        }
+
+        /* Edge flow animation - flowing dashes traveling towards arrows */
+        @keyframes edgeFlow {
+            0% { stroke-dashoffset: 30; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        /* Dim non-highlighted edges but keep markers visible */
+        .mermaid.walkthrough-active .edgePaths path.flowchart-link {
+            opacity: 0.15;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Keep arrowhead markers always visible */
+        .mermaid.walkthrough-active marker,
+        .mermaid.walkthrough-active marker path,
+        .mermaid.walkthrough-active defs path,
+        .mermaid.walkthrough-active path.arrowMarkerPath {
+            opacity: 1 !important;
+        }
+
+        /* Highlighted edge animation - use high specificity to override Mermaid */
+        .mermaid.walkthrough-active path.flowchart-link.highlighted,
+        .mermaid.walkthrough-active .edgePaths path.highlighted,
+        .mermaid.walkthrough-active path.edge-thickness-normal.highlighted,
+        .mermaid.walkthrough-active path.highlighted.flowchart-link {
+            opacity: 1 !important;
+            stroke: #6366f1 !important;
+            stroke-width: 3px !important;
+            stroke-dasharray: 6, 10 !important;
+            stroke-dashoffset: 0;
+            stroke-linecap: round !important;
+            animation: edgeFlow 0.5s linear infinite !important;
+            filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.7));
+        }
+
+        /* Hover exploration mode */
+        .mermaid.hover-mode .node {
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+        .mermaid.hover-mode.hovering .node:not(.hover-connected) {
+            opacity: 0.25;
+        }
+        .mermaid.hover-mode.hovering .edgePath:not(.hover-connected) {
+            opacity: 0.15;
+        }
+        .mermaid.hover-mode .node.hover-connected {
+            opacity: 1;
+        }
+        .mermaid.hover-mode .edgePath.hover-connected path {
+            stroke-width: 3px !important;
+            opacity: 1;
+        }
+
+        /* Reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            .mermaid.walkthrough-active .edgePath.highlighted path {
+                animation: none;
+            }
+            .mermaid.walkthrough-active .node,
+            .mermaid.walkthrough-active .edgePath {
+                transition: opacity 0.1s ease;
+            }
+        }
+
         .progress-bar { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
         .bookmark-pulse { animation: pulse 0.3s ease-in-out; }
@@ -1904,7 +2101,7 @@
                         <svg class="w-6 h-6" :fill="isBookmarked('day-1') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                     </button>
                 </div>
-                <h2 class="text-3xl font-bold mb-2">Day 1: Project Setup + CLAUDE.md</h2>
+                <h2 class="text-3xl font-bold mb-2">Day 1: Project Setup + Configuration</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 1 of 14 • Week 1: Foundation</p>
 
                 <h3 class="text-xl font-semibold mb-3">Learning Objectives</h3>
@@ -2256,13 +2453,98 @@ Templates receive these variables:
 
                 <div class="callout callout-info"><strong>Tip:</strong> If Claude asks questions already answered in CLAUDE.md, update CLAUDE.md with clearer answers.</div>
 
+                <h3 class="text-xl font-semibold mt-8 mb-3">Settings & Permissions</h3>
+                <p class="mb-4">Beyond CLAUDE.md, Claude Code uses <code>settings.json</code> files to control behavior and permissions.</p>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Settings File Locations</h4>
+                <div class="overflow-x-auto mb-4">
+                    <table class="w-full border-collapse border border-gray-300 dark:border-gray-600">
+                        <thead><tr class="bg-gray-100 dark:bg-gray-700">
+                            <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">File</th>
+                            <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Scope</th>
+                            <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Use Case</th>
+                        </tr></thead>
+                        <tbody>
+                            <tr><td class="border border-gray-300 dark:border-gray-600 px-3 py-2"><code>~/.claude/settings.json</code></td><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">User-level</td><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Personal preferences across all projects</td></tr>
+                            <tr><td class="border border-gray-300 dark:border-gray-600 px-3 py-2"><code>.claude/settings.json</code></td><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Project-level</td><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Team-shared project settings</td></tr>
+                            <tr><td class="border border-gray-300 dark:border-gray-600 px-3 py-2"><code>.claude/settings.local.json</code></td><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Local-only</td><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Personal overrides (not committed)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Permission Configuration</h4>
+                <p class="mb-4">Control what Claude can access using permission patterns. Deny rules always take precedence over allow rules.</p>
+                <pre><code class="language-json">{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Edit(src/**)",
+      "Edit(tests/**)",
+      "Bash(uv:*)",
+      "Bash(pytest:*)",
+      "Bash(git:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Edit(.env*)",
+      "Bash(:*sudo:*)"
+    ]
+  }
+}</code></pre>
+
+                <p class="mt-4 mb-4">Create <code>.claude/settings.json</code> for our CLI generator project:</p>
+                <pre><code class="language-json">{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Edit(src/**)",
+      "Edit(tests/**)",
+      "Edit(generated/**)",
+      "Bash(uv:*)",
+      "Bash(pytest:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Edit(.env*)",
+      "Bash(:*sudo:*)",
+      "Bash(:*eval:*)",
+      "Bash(:*exec:*)"
+    ]
+  }
+}</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Status Line Configuration</h3>
+                <p class="mb-4">The status line shows useful information in your terminal while Claude works. Configure it using the <code>/statusline</code> command or manually.</p>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Quick Setup</h4>
+                <pre><code class="language-bash"># In Claude Code session
+/statusline</code></pre>
+                <p class="mt-2 mb-4">Follow the prompts to choose your display format and information.</p>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Manual Setup</h4>
+                <p class="mb-4">Create a status line script that reads JSON from stdin:</p>
+                <pre><code class="language-bash">#!/bin/bash
+# ~/.claude/statusline.sh
+read -r input
+model=$(echo "$input" | jq -r '.model // "unknown"')
+tokens=$(echo "$input" | jq -r '.tokens_used // 0')
+max_tokens=$(echo "$input" | jq -r '.max_tokens // 200000')
+pct=$(( tokens * 100 / max_tokens ))
+echo "🤖 $model | 📊 $pct%"</code></pre>
+                <p class="mt-2 mb-4">Make it executable: <code>chmod +x ~/.claude/statusline.sh</code></p>
+
                 <h3 class="text-xl font-semibold mt-8 mb-3">Day 1 Checklist</h3>
                 <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                     <div class="checklist-item"><input type="checkbox" id="d1-1" @change="saveChecklist('d1-1', $event.target.checked)" :checked="checklist['d1-1']"><label for="d1-1">Project structure created</label></div>
                     <div class="checklist-item"><input type="checkbox" id="d1-2" @change="saveChecklist('d1-2', $event.target.checked)" :checked="checklist['d1-2']"><label for="d1-2">Dependencies installed with uv</label></div>
                     <div class="checklist-item"><input type="checkbox" id="d1-3" @change="saveChecklist('d1-3', $event.target.checked)" :checked="checklist['d1-3']"><label for="d1-3">CLAUDE.md comprehensive and tested</label></div>
                     <div class="checklist-item"><input type="checkbox" id="d1-4" @change="saveChecklist('d1-4', $event.target.checked)" :checked="checklist['d1-4']"><label for="d1-4">Rules files created</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d1-5" @change="saveChecklist('d1-5', $event.target.checked)" :checked="checklist['d1-5']"><label for="d1-5">Fresh Claude session reads context correctly</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d1-5" @change="saveChecklist('d1-5', $event.target.checked)" :checked="checklist['d1-5']"><label for="d1-5">settings.json configured with permissions</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d1-6" @change="saveChecklist('d1-6', $event.target.checked)" :checked="checklist['d1-6']"><label for="d1-6">Status line setup (optional)</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d1-7" @change="saveChecklist('d1-7', $event.target.checked)" :checked="checklist['d1-7']"><label for="d1-7">Fresh Claude session reads context correctly</label></div>
                 </div>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Exercise: CLAUDE.md Stress Test</h3>
@@ -3328,12 +3610,32 @@ User can exit at any step. Progress is not lost:
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Context Flow Pattern</h3>
                 <p class="mb-4">Commands work together through artifacts:</p>
-                <div class="mermaid-container">
+                <div class="mermaid-container mermaid-walkthrough" id="command-workflow-diagram" data-walkthrough="command-workflow">
                     <div class="mermaid-container-title">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
                         Command Workflow Diagram
                     </div>
-                    <div class="mermaid">
+                    <div class="mermaid-controls">
+                        <button class="walkthrough-play" title="Play walkthrough (Space)">
+                            <svg class="play-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg class="pause-icon hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
+                        <button class="walkthrough-prev" title="Previous step (←)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button class="walkthrough-next" title="Next step (→)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                        <button class="walkthrough-reset" title="Reset (R)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                        <span class="mermaid-step-indicator">Step <span class="current-step">0</span>/<span class="total-steps">0</span></span>
+                        <span class="mermaid-step-description">Click play or hover over nodes to explore</span>
+                        <span class="mermaid-kbd-hint">
+                            <kbd>Space</kbd> <kbd>←</kbd> <kbd>→</kbd>
+                        </span>
+                    </div>
+                    <div class="mermaid hover-mode" id="command-workflow-mermaid">
 flowchart TD
     A["/design 'tool description'"] --> B["CLISpec in session memory"]
     B --> C{User choice}
@@ -3384,6 +3686,9 @@ flowchart TD
             <section id="day-5" class="day-section week-1" x-intersect:enter="currentSection = 'day-5'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-medium rounded-full">Day 5 of 5</span>
+                    <button @click="toggleBookmark('day-5', 'Day 5: Quality Hooks')" :class="isBookmarked('day-5') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('day-5') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                    </button>
                 </div>
                 <h2 class="text-3xl font-bold mb-2">Day 5: Quality Hooks</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 5 of 14 • Week 1: Foundation</p>
@@ -3401,12 +3706,32 @@ flowchart TD
                     <li><strong>Pre-hooks:</strong> Run before an action (can block)</li>
                     <li><strong>Post-hooks:</strong> Run after an action (can alert)</li>
                 </ul>
-                <div class="mermaid-container">
+                <div class="mermaid-container mermaid-walkthrough" id="hook-lifecycle-diagram" data-walkthrough="hook-lifecycle">
                     <div class="mermaid-container-title">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                         Hook Lifecycle Flow
                     </div>
-                    <div class="mermaid">
+                    <div class="mermaid-controls">
+                        <button class="walkthrough-play" title="Play walkthrough (Space)">
+                            <svg class="play-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg class="pause-icon hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
+                        <button class="walkthrough-prev" title="Previous step (←)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button class="walkthrough-next" title="Next step (→)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                        <button class="walkthrough-reset" title="Reset (R)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                        <span class="mermaid-step-indicator">Step <span class="current-step">0</span>/<span class="total-steps">0</span></span>
+                        <span class="mermaid-step-description">Click play or hover over nodes to explore</span>
+                        <span class="mermaid-kbd-hint">
+                            <kbd>Space</kbd> <kbd>←</kbd> <kbd>→</kbd>
+                        </span>
+                    </div>
+                    <div class="mermaid hover-mode" id="hook-lifecycle-mermaid">
 flowchart LR
     A[User Action] --> B{Pre-Hook}
     B -->|Pass| C[Execute Action]
@@ -3922,6 +4247,9 @@ subprocess.call(["ls", "-la"], shell=False)
             <section id="day-6" class="day-section week-2" x-intersect:enter="currentSection = 'day-6'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-full">Day 1 of 5</span>
+                    <button @click="toggleBookmark('day-6', 'Day 6: Context-Aware Skills')" :class="isBookmarked('day-6') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('day-6') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                    </button>
                 </div>
                 <h2 class="text-3xl font-bold mb-2">Day 6: Context-Aware Skills</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 6 of 14 • Week 2: Intelligence</p>
@@ -4684,6 +5012,9 @@ class TestDependencyDetector:
             <section id="day-7" class="day-section week-2" x-intersect:enter="currentSection = 'day-7'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-full">Day 2 of 5</span>
+                    <button @click="toggleBookmark('day-7', 'Day 7: Subagent Coordination')" :class="isBookmarked('day-7') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('day-7') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                    </button>
                 </div>
                 <h2 class="text-3xl font-bold mb-2">Day 7: Subagent Coordination</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 7 of 14 • Week 2: Intelligence</p>
@@ -5238,6 +5569,9 @@ class SubagentCoordinator:
             <section id="day-8" class="day-section week-2" x-intersect:enter="currentSection = 'day-8'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-full">Day 3 of 5</span>
+                    <button @click="toggleBookmark('day-8', 'Day 8: MCP External Tools')" :class="isBookmarked('day-8') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('day-8') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                    </button>
                 </div>
                 <h2 class="text-3xl font-bold mb-2">Day 8: MCP External Tools</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 8 of 14 • Week 2: Intelligence</p>
@@ -5744,19 +6078,117 @@ class TestPyPIChecker:
             <!-- Day Divider -->
             <div class="day-divider"><div class="day-divider-dot"></div></div>
 
-            <!-- Day 9 -->
+            <!-- Day 9 - Memory & Context Management -->
             <section id="day-9" class="day-section week-2" x-intersect:enter="currentSection = 'day-9'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-full">Day 4 of 5</span>
+                    <button @click="toggleBookmark('day-9', 'Day 9: Memory & Context Management')" :class="isBookmarked('day-9') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('day-9') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                    </button>
                 </div>
-                <h2 class="text-3xl font-bold mb-2">Day 9: Integration Testing</h2>
+                <h2 class="text-3xl font-bold mb-2">Day 9: Memory & Context Management</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 9 of 14 • Week 2: Intelligence</p>
+
+                <h3 class="text-xl font-semibold mb-3">Learning Objectives</h3>
+                <ul class="list-disc list-inside mb-6 space-y-1">
+                    <li>Understand how Claude Code handles context exhaustion</li>
+                    <li>Master session persistence techniques</li>
+                    <li>Use MCP-based memory for cross-session continuity</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mb-3">The Context Challenge</h3>
+                <p class="mb-4">Claude Code has a finite context window. When working on large projects, context exhaustion is inevitable. Understanding how to manage this is crucial for effective workflows.</p>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Auto-Compaction</h4>
+                <p class="mb-4">When context fills up, Claude Code automatically compacts the conversation:</p>
+                <ol class="list-decimal list-inside mb-4 space-y-2">
+                    <li>Summary of key decisions and progress is created</li>
+                    <li>Older detailed exchanges are removed</li>
+                    <li>Recent context is preserved</li>
+                    <li>Work continues with compressed history</li>
+                </ol>
+                <div class="callout callout-info"><strong>Tip:</strong> You can monitor context usage in the status line if you configured it in Day 1.</div>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Session Persistence</h3>
+                <p class="mb-4">Claude Code provides several ways to resume previous work:</p>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Continue Last Session</h4>
+                <pre><code class="language-bash"># Resume most recent session
+claude -c
+
+# Or use the continue flag
+claude --continue</code></pre>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Resume Specific Session</h4>
+                <pre><code class="language-bash"># Resume a specific session by ID
+claude --resume &lt;session-id&gt;
+
+# List recent sessions to find IDs
+claude sessions list</code></pre>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Session Best Practices</h4>
+                <ul class="list-disc list-inside mb-4 space-y-1">
+                    <li>Use <code>claude -c</code> when returning to interrupted work</li>
+                    <li>Start fresh sessions for unrelated tasks</li>
+                    <li>Let auto-compaction handle long sessions naturally</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">MCP-Based Memory</h3>
+                <p class="mb-4">For true cross-session memory that survives beyond auto-compaction, use MCP-based memory tools like <code>claude-mem</code>:</p>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Install claude-mem</h4>
+                <pre><code class="language-bash"># Install the memory plugin
+claude plugins install claude-mem@thedotmack</code></pre>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Using Memory</h4>
+                <pre><code class="language-bash"># In Claude Code session - search past work
+/mem-search "CLI generator architecture decisions"
+
+# The plugin automatically records:
+# - Key decisions you make
+# - Bugs you fix and how
+# - Implementation patterns used
+# - Session summaries</code></pre>
+
+                <h4 class="text-lg font-semibold mt-6 mb-2">Memory Benefits</h4>
+                <ul class="list-disc list-inside mb-4 space-y-1">
+                    <li><strong>Cross-session continuity:</strong> Pick up where you left off</li>
+                    <li><strong>Decision history:</strong> Remember why you chose certain approaches</li>
+                    <li><strong>Pattern reuse:</strong> Apply previous solutions to similar problems</li>
+                    <li><strong>Team knowledge:</strong> Share learnings across the project</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Day 9 Checklist</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                    <div class="checklist-item"><input type="checkbox" id="d9-1" @change="saveChecklist('d9-1', $event.target.checked)" :checked="checklist['d9-1']"><label for="d9-1">Understand auto-compaction behavior</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d9-2" @change="saveChecklist('d9-2', $event.target.checked)" :checked="checklist['d9-2']"><label for="d9-2">Practice using claude -c to resume sessions</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d9-3" @change="saveChecklist('d9-3', $event.target.checked)" :checked="checklist['d9-3']"><label for="d9-3">Install and configure claude-mem (optional)</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d9-4" @change="saveChecklist('d9-4', $event.target.checked)" :checked="checklist['d9-4']"><label for="d9-4">Test memory search functionality</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d9-5" @change="saveChecklist('d9-5', $event.target.checked)" :checked="checklist['d9-5']"><label for="d9-5">Document key architectural decisions for memory</label></div>
+                </div>
+                <div class="flex justify-end mt-6"><button @click="toggleDay(9)" :class="completedDays.includes(9) ? 'bg-green-500' : 'bg-primary'" class="px-6 py-2 text-white rounded-lg hover:opacity-90"><span x-text="completedDays.includes(9) ? 'Completed!' : 'Mark as Complete'"></span></button></div>
+            </section>
+
+            <!-- Day Divider -->
+            <div class="day-divider"><div class="day-divider-dot"></div></div>
+
+            <!-- Day 10 - Testing & Packaging -->
+            <section id="day-10" class="day-section week-2" x-intersect:enter="currentSection = 'day-10'">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-full">Day 5 of 5</span>
+                    <button @click="toggleBookmark('day-10', 'Day 10: Testing & Packaging')" :class="isBookmarked('day-10') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('day-10') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                    </button>
+                </div>
+                <h2 class="text-3xl font-bold mb-2">Day 10: Testing & Packaging</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 10 of 14 • Week 2: Intelligence</p>
 
                 <h3 class="text-xl font-semibold mb-3">Learning Objectives</h3>
                 <ul class="list-disc list-inside mb-6 space-y-1">
                     <li>Test the complete workflow end-to-end</li>
                     <li>Verify all components work together</li>
                     <li>Create golden tests for regression prevention</li>
+                    <li>Package your Claude Code constructs for sharing</li>
                 </ul>
 
                 <h3 class="text-xl font-semibold mb-3">End-to-End Test Suite</h3>
@@ -6314,38 +6746,10 @@ fi
 # Exit with failure if any test suite failed
 [ $UNIT_EXIT -eq 0 ] && [ $INTEGRATION_EXIT -eq 0 ] && [ $GOLDEN_EXIT -eq 0 ]</code></pre>
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">✅ Day 9 Checklist</h3>
-                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="checklist-item"><input type="checkbox" id="d9-1" @change="saveChecklist('d9-1', $event.target.checked)" :checked="checklist['d9-1']"><label for="d9-1">End-to-end integration tests passing</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d9-2" @change="saveChecklist('d9-2', $event.target.checked)" :checked="checklist['d9-2']"><label for="d9-2">Hook integration tests passing</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d9-3" @change="saveChecklist('d9-3', $event.target.checked)" :checked="checklist['d9-3']"><label for="d9-3">Skill integration tests passing</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d9-4" @change="saveChecklist('d9-4', $event.target.checked)" :checked="checklist['d9-4']"><label for="d9-4">MCP integration tests passing</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d9-5" @change="saveChecklist('d9-5', $event.target.checked)" :checked="checklist['d9-5']"><label for="d9-5">Golden tests for regression prevention</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d9-6" @change="saveChecklist('d9-6', $event.target.checked)" :checked="checklist['d9-6']"><label for="d9-6">Full workflow tested: description → working CLI</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d9-7" @change="saveChecklist('d9-7', $event.target.checked)" :checked="checklist['d9-7']"><label for="d9-7">Test runner script created</label></div>
-                </div>
-                <div class="flex justify-end mt-6"><button @click="toggleDay(9)" :class="completedDays.includes(9) ? 'bg-green-500' : 'bg-primary'" class="px-6 py-2 text-white rounded-lg hover:opacity-90"><span x-text="completedDays.includes(9) ? 'Completed!' : 'Mark as Complete'"></span></button></div>
-            </section>
+                <h3 class="text-xl font-semibold mt-8 mb-3">Plugin Packaging</h3>
+                <p class="mb-4">Now let's package everything as a distributable plugin.</p>
 
-            <!-- Day Divider -->
-            <div class="day-divider"><div class="day-divider-dot"></div></div>
-
-            <!-- Day 10 -->
-            <section id="day-10" class="day-section week-2" x-intersect:enter="currentSection = 'day-10'">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-full">Day 5 of 5</span>
-                </div>
-                <h2 class="text-3xl font-bold mb-2">Day 10: Plugin Packaging</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 10 of 14 • Week 2: Intelligence</p>
-
-                <h3 class="text-xl font-semibold mb-3">Learning Objectives</h3>
-                <ul class="list-disc list-inside mb-6 space-y-1">
-                    <li>Package your Claude Code constructs for sharing</li>
-                    <li>Create installation instructions</li>
-                    <li>Document for users</li>
-                </ul>
-
-                <h3 class="text-xl font-semibold mb-3">Plugin Structure</h3>
+                <h4 class="text-lg font-semibold mb-3">Plugin Structure</h4>
                 <p class="text-gray-600 dark:text-gray-400 mb-4">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">.claude/plugins/cli-generator/</code>:</p>
                 <pre><code class="language-bash">.claude/plugins/cli-generator/
 ├── plugin.yaml           # Plugin manifest
@@ -6649,13 +7053,15 @@ echo "  3. Try: /design \"A simple test CLI\""</code></pre>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">✅ Day 10 Checklist</h3>
                 <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="checklist-item"><input type="checkbox" id="d10-1" @change="saveChecklist('d10-1', $event.target.checked)" :checked="checklist['d10-1']"><label for="d10-1">Plugin directory structure created</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-2" @change="saveChecklist('d10-2', $event.target.checked)" :checked="checklist['d10-2']"><label for="d10-2">plugin.yaml manifest complete</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-3" @change="saveChecklist('d10-3', $event.target.checked)" :checked="checklist['d10-3']"><label for="d10-3">Installation instructions written</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-4" @change="saveChecklist('d10-4', $event.target.checked)" :checked="checklist['d10-4']"><label for="d10-4">README documentation complete</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-5" @change="saveChecklist('d10-5', $event.target.checked)" :checked="checklist['d10-5']"><label for="d10-5">requirements.txt created</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-6" @change="saveChecklist('d10-6', $event.target.checked)" :checked="checklist['d10-6']"><label for="d10-6">install.sh script working</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-7" @change="saveChecklist('d10-7', $event.target.checked)" :checked="checklist['d10-7']"><label for="d10-7">All components copied to plugin directory</label></div>
+                    <p class="font-semibold mb-2 text-sm">Integration Testing:</p>
+                    <div class="checklist-item"><input type="checkbox" id="d10-1" @change="saveChecklist('d10-1', $event.target.checked)" :checked="checklist['d10-1']"><label for="d10-1">End-to-end integration tests passing</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-2" @change="saveChecklist('d10-2', $event.target.checked)" :checked="checklist['d10-2']"><label for="d10-2">Hook and skill integration tests passing</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-3" @change="saveChecklist('d10-3', $event.target.checked)" :checked="checklist['d10-3']"><label for="d10-3">Golden tests for regression prevention</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-4" @change="saveChecklist('d10-4', $event.target.checked)" :checked="checklist['d10-4']"><label for="d10-4">Full workflow tested: description → working CLI</label></div>
+                    <p class="font-semibold mb-2 mt-4 text-sm">Plugin Packaging:</p>
+                    <div class="checklist-item"><input type="checkbox" id="d10-5" @change="saveChecklist('d10-5', $event.target.checked)" :checked="checklist['d10-5']"><label for="d10-5">Plugin directory structure created</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-6" @change="saveChecklist('d10-6', $event.target.checked)" :checked="checklist['d10-6']"><label for="d10-6">plugin.yaml manifest complete</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-7" @change="saveChecklist('d10-7', $event.target.checked)" :checked="checklist['d10-7']"><label for="d10-7">Installation instructions and README complete</label></div>
                     <div class="checklist-item"><input type="checkbox" id="d10-8" @change="saveChecklist('d10-8', $event.target.checked)" :checked="checklist['d10-8']"><label for="d10-8">Test plugin installation in fresh project</label></div>
                 </div>
                 <div class="flex justify-end mt-6"><button @click="toggleDay(10)" :class="completedDays.includes(10) ? 'bg-green-500' : 'bg-primary'" class="px-6 py-2 text-white rounded-lg hover:opacity-90"><span x-text="completedDays.includes(10) ? 'Completed!' : 'Mark as Complete'"></span></button></div>
@@ -6677,6 +7083,9 @@ echo "  3. Try: /design \"A simple test CLI\""</code></pre>
             <section id="day-11-12" class="day-section week-3" x-intersect:enter="currentSection = 'day-11-12'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm font-medium rounded-full">Days 1-2 of 4</span>
+                    <button @click="toggleBookmark('day-11-12', 'Days 11-12: Documentation + Examples')" :class="isBookmarked('day-11-12') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('day-11-12') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                    </button>
                 </div>
                 <h2 class="text-3xl font-bold mb-2">Days 11-12: Documentation + Examples</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Days 11-12 of 14 • Week 3: Polish</p>
@@ -6845,8 +7254,8 @@ tasks export --format json > backup.json</code></pre>
             <section id="day-13-14" class="day-section week-3" x-intersect:enter="currentSection = 'day-13-14'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm font-medium rounded-full">Days 3-4 of 4</span>
-                    <button @click="toggleBookmark('day-13-14')" class="text-gray-400 hover:text-yellow-500 transition-colors" :class="{ 'text-yellow-500': bookmarks.includes('day-13-14') }">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" :fill="bookmarks.includes('day-13-14') ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                    <button @click="toggleBookmark('day-13-14', 'Days 13-14: Final Testing + Release')" :class="isBookmarked('day-13-14') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('day-13-14') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                     </button>
                 </div>
                 <h2 class="text-3xl font-bold mb-2">Days 13-14: Final Testing + Release</h2>
@@ -6948,8 +7357,8 @@ cli-gen --help</code></pre>
             <section id="appendix-a" class="day-section reference" x-intersect:enter="currentSection = 'appendix-a'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-full">Appendix A</span>
-                    <button @click="toggleBookmark('appendix-a')" class="text-gray-400 hover:text-yellow-500 transition-colors" :class="{ 'text-yellow-500': bookmarks.includes('appendix-a') }">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" :fill="bookmarks.includes('appendix-a') ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                    <button @click="toggleBookmark('appendix-a', 'Appendix A: Troubleshooting Guide')" :class="isBookmarked('appendix-a') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('appendix-a') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                     </button>
                 </div>
                 <h2 class="text-3xl font-bold mb-6">Appendix A: Troubleshooting Guide</h2>
@@ -7039,8 +7448,8 @@ logging.basicConfig(level=logging.DEBUG)</code></pre>
             <section id="appendix-b" class="day-section reference" x-intersect:enter="currentSection = 'appendix-b'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-full">Appendix B</span>
-                    <button @click="toggleBookmark('appendix-b')" class="text-gray-400 hover:text-yellow-500 transition-colors" :class="{ 'text-yellow-500': bookmarks.includes('appendix-b') }">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" :fill="bookmarks.includes('appendix-b') ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                    <button @click="toggleBookmark('appendix-b', 'Appendix B: Quick Reference Cards')" :class="isBookmarked('appendix-b') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('appendix-b') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                     </button>
                 </div>
                 <h2 class="text-3xl font-bold mb-6">Appendix B: Quick Reference Cards</h2>
@@ -7137,8 +7546,8 @@ OptionSpec(
             <section id="appendix-c" class="day-section reference" x-intersect:enter="currentSection = 'appendix-c'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-full">Appendix C</span>
-                    <button @click="toggleBookmark('appendix-c')" class="text-gray-400 hover:text-yellow-500 transition-colors" :class="{ 'text-yellow-500': bookmarks.includes('appendix-c') }">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" :fill="bookmarks.includes('appendix-c') ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                    <button @click="toggleBookmark('appendix-c', 'Appendix C: Extension Ideas')" :class="isBookmarked('appendix-c') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" :fill="isBookmarked('appendix-c') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                     </button>
                 </div>
                 <h2 class="text-3xl font-bold mb-6">Appendix C: Extension Ideas</h2>
@@ -7405,7 +7814,361 @@ ENTRYPOINT ["my-cli"]</code></pre>
                 }
             });
             Prism.highlightAll();
+
+            // Initialize Mermaid Walkthroughs after Mermaid renders
+            const initWalkthroughs = () => {
+                const diagrams = document.querySelectorAll('.mermaid-walkthrough');
+                let allReady = true;
+                diagrams.forEach(d => {
+                    if (!d.querySelector('.mermaid svg')) {
+                        allReady = false;
+                    }
+                });
+                if (allReady && diagrams.length > 0) {
+                    initMermaidWalkthroughs();
+                } else {
+                    setTimeout(initWalkthroughs, 200);
+                }
+            };
+            setTimeout(initWalkthroughs, 500);
         });
+
+        // Mermaid Walkthrough System
+        const walkthroughConfigs = {
+            'hook-lifecycle': {
+                nodes: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+                edges: [
+                    { from: 'A', to: 'B' },
+                    { from: 'B', to: 'C', label: 'Pass' },
+                    { from: 'B', to: 'D', label: 'Fail' },
+                    { from: 'C', to: 'E' },
+                    { from: 'E', to: 'F', label: 'Pass' },
+                    { from: 'E', to: 'G', label: 'Warn' }
+                ],
+                steps: [
+                    { nodes: ['A'], edges: [], description: 'User initiates an action (e.g., generate code, commit)' },
+                    { nodes: ['A', 'B'], edges: [0], description: 'Action triggers the pre-hook for validation' },
+                    { nodes: ['B', 'C'], edges: [1], description: '✓ Pre-hook passes → action proceeds' },
+                    { nodes: ['B', 'D'], edges: [2], description: '✗ Pre-hook fails → action blocked with error message' },
+                    { nodes: ['C', 'E'], edges: [3], description: 'After execution, post-hook runs for verification' },
+                    { nodes: ['E', 'F'], edges: [4], description: '✓ Post-hook passes → success reported' },
+                    { nodes: ['E', 'G'], edges: [5], description: '⚠ Post-hook warns → success with warnings shown' }
+                ],
+                connections: {
+                    'A': { outgoing: ['B'], incoming: [] },
+                    'B': { outgoing: ['C', 'D'], incoming: ['A'] },
+                    'C': { outgoing: ['E'], incoming: ['B'] },
+                    'D': { outgoing: [], incoming: ['B'] },
+                    'E': { outgoing: ['F', 'G'], incoming: ['C'] },
+                    'F': { outgoing: [], incoming: ['E'] },
+                    'G': { outgoing: [], incoming: ['E'] }
+                }
+            },
+            'command-workflow': {
+                nodes: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'],
+                edges: [
+                    { from: 'A', to: 'B' },      // 0
+                    { from: 'B', to: 'C' },      // 1
+                    { from: 'C', to: 'D' },      // 2: /refine
+                    { from: 'C', to: 'E' },      // 3: /save-spec
+                    { from: 'C', to: 'F' },      // 4: /generate
+                    { from: 'D', to: 'B' },      // 5: back to spec
+                    { from: 'F', to: 'G' },      // 6
+                    { from: 'G', to: 'H' },      // 7: /add-command
+                    { from: 'G', to: 'I' },      // 8: /implement
+                    { from: 'G', to: 'J' },      // 9: /test
+                    { from: 'H', to: 'F' },      // 10: back to generated
+                    { from: 'I', to: 'F' },      // 11: back to generated
+                    { from: 'J', to: 'K' }       // 12: results
+                ],
+                steps: [
+                    { nodes: ['A'], edges: [], description: 'Start with /design and describe your CLI in natural language' },
+                    { nodes: ['A', 'B'], edges: [0], description: 'Claude generates a CLISpec and stores it in session memory' },
+                    { nodes: ['B', 'C'], edges: [1], description: 'You can now choose what to do with the spec' },
+                    { nodes: ['C', 'D'], edges: [2], description: 'Path 1: Use /refine to iterate on the design' },
+                    { nodes: ['D', 'B'], edges: [5], description: 'Refinements update the spec → ready for another choice' },
+                    { nodes: ['C', 'E'], edges: [3], description: 'Path 2: Use /save-spec to persist to specs/tool.json' },
+                    { nodes: ['C', 'F'], edges: [4], description: 'Path 3: Use /generate to create the CLI code' },
+                    { nodes: ['F', 'G'], edges: [6], description: 'Generated code is ready → choose further actions' },
+                    { nodes: ['G', 'H'], edges: [7], description: 'Use /add-command to extend with new commands' },
+                    { nodes: ['G', 'I'], edges: [8], description: 'Use /implement to replace TODOs with real logic' },
+                    { nodes: ['G', 'J', 'K'], edges: [9, 12], description: 'Use /test to run tests and see results' }
+                ],
+                connections: {
+                    'A': { outgoing: ['B'], incoming: [] },
+                    'B': { outgoing: ['C'], incoming: ['A', 'D'] },
+                    'C': { outgoing: ['D', 'E', 'F'], incoming: ['B'] },
+                    'D': { outgoing: ['B'], incoming: ['C'] },
+                    'E': { outgoing: [], incoming: ['C'] },
+                    'F': { outgoing: ['G'], incoming: ['C', 'H', 'I'] },
+                    'G': { outgoing: ['H', 'I', 'J'], incoming: ['F'] },
+                    'H': { outgoing: ['F'], incoming: ['G'] },
+                    'I': { outgoing: ['F'], incoming: ['G'] },
+                    'J': { outgoing: ['K'], incoming: ['G'] },
+                    'K': { outgoing: [], incoming: ['J'] }
+                }
+            }
+        };
+
+        function initMermaidWalkthroughs() {
+            document.querySelectorAll('.mermaid-walkthrough').forEach(container => {
+                const walkthroughId = container.dataset.walkthrough;
+                const config = walkthroughConfigs[walkthroughId];
+                if (!config) return;
+
+                const mermaidEl = container.querySelector('.mermaid');
+                const svg = mermaidEl.querySelector('svg');
+                if (!svg) return;
+
+                const state = {
+                    currentStep: 0,
+                    playing: false,
+                    playInterval: null,
+                    focused: false
+                };
+
+                // Get DOM references
+                const playBtn = container.querySelector('.walkthrough-play');
+                const prevBtn = container.querySelector('.walkthrough-prev');
+                const nextBtn = container.querySelector('.walkthrough-next');
+                const resetBtn = container.querySelector('.walkthrough-reset');
+                const currentStepEl = container.querySelector('.current-step');
+                const totalStepsEl = container.querySelector('.total-steps');
+                const descriptionEl = container.querySelector('.mermaid-step-description');
+
+                if (!playBtn || !prevBtn || !nextBtn || !resetBtn) return;
+
+                if (totalStepsEl) totalStepsEl.textContent = config.steps.length;
+
+                // Build node and edge maps
+                const nodeMap = {};
+                const edgeMap = [];
+
+                // Find nodes - Mermaid v10 uses .nodes > .node structure
+                svg.querySelectorAll('.node, .nodes > g, g.node').forEach(node => {
+                    const id = node.id || '';
+                    const match = id.match(/(?:flowchart-)?([A-K])[-_]?\d*/i);
+                    if (match) {
+                        const nodeId = match[1].toUpperCase();
+                        if (!nodeMap[nodeId]) nodeMap[nodeId] = node;
+                    }
+                });
+
+                // Fallback: Look for nodes by structure if ID matching failed
+                if (Object.keys(nodeMap).length === 0) {
+                    svg.querySelectorAll('g').forEach(g => {
+                        const id = g.id || '';
+                        if (id.includes('flowchart') || g.getAttribute('class')?.includes('node')) {
+                            const match = id.match(/([A-K])[-_]?\d*$/i);
+                            if (match) {
+                                nodeMap[match[1].toUpperCase()] = g;
+                            }
+                        }
+                    });
+                }
+
+                // Also check for nodes with data-id attribute (don't overwrite existing)
+                svg.querySelectorAll('[data-id]').forEach(node => {
+                    const dataId = node.getAttribute('data-id');
+                    if (dataId && /^[A-Z]$/i.test(dataId) && !nodeMap[dataId.toUpperCase()]) {
+                        nodeMap[dataId.toUpperCase()] = node;
+                    }
+                });
+
+                // Find all edge paths
+                const allPaths = svg.querySelectorAll('path');
+                allPaths.forEach((path) => {
+                    const className = path.getAttribute('class') || '';
+                    const isEdge = className.includes('flowchart-link') ||
+                                  className.includes('edge-thickness') ||
+                                  path.closest('.edgePaths') !== null;
+                    const isMarker = path.closest('marker') !== null ||
+                                    path.closest('defs') !== null;
+                    if (isEdge && !isMarker) {
+                        edgeMap.push(path);
+                    }
+                });
+
+                function clearHighlights() {
+                    svg.querySelectorAll('.node').forEach(n => n.classList.remove('highlighted'));
+                    svg.querySelectorAll('.edgePath').forEach(e => e.classList.remove('highlighted'));
+                    svg.querySelectorAll('path.highlighted').forEach(p => p.classList.remove('highlighted'));
+                    // Also clear from edgeMap elements
+                    edgeMap.forEach(edge => edge.classList.remove('highlighted'));
+                }
+
+                function showStep(stepIndex) {
+                    if (stepIndex < 0 || stepIndex >= config.steps.length) return;
+
+                    state.currentStep = stepIndex;
+                    if (currentStepEl) currentStepEl.textContent = stepIndex + 1;
+
+                    const step = config.steps[stepIndex];
+                    if (descriptionEl) descriptionEl.textContent = step.description;
+
+                    mermaidEl.classList.add('walkthrough-active');
+                    mermaidEl.classList.remove('hover-mode');
+
+                    clearHighlights();
+
+                    // Highlight nodes
+                    step.nodes.forEach(nodeId => {
+                        if (nodeMap[nodeId]) nodeMap[nodeId].classList.add('highlighted');
+                    });
+
+                    // Highlight edges
+                    step.edges.forEach(edgeIdx => {
+                        if (edgeMap[edgeIdx]) edgeMap[edgeIdx].classList.add('highlighted');
+                    });
+                }
+
+                function reset() {
+                    stopPlaying();
+                    state.currentStep = 0;
+                    currentStepEl.textContent = '0';
+                    descriptionEl.textContent = 'Click play or hover over nodes to explore';
+                    mermaidEl.classList.remove('walkthrough-active');
+                    mermaidEl.classList.add('hover-mode');
+                    clearHighlights();
+                }
+
+                function nextStep() {
+                    if (state.currentStep < config.steps.length - 1) {
+                        showStep(state.currentStep + 1);
+                    } else {
+                        // Animation complete - pause briefly then reset to original state
+                        stopPlaying();
+                        setTimeout(() => {
+                            reset();
+                        }, 1500);
+                    }
+                }
+
+                function prevStep() {
+                    if (state.currentStep > 0) {
+                        showStep(state.currentStep - 1);
+                    }
+                }
+
+                function startPlaying() {
+                    state.playing = true;
+                    playBtn.classList.add('active');
+                    playBtn.querySelector('.play-icon').classList.add('hidden');
+                    playBtn.querySelector('.pause-icon').classList.remove('hidden');
+
+                    if (state.currentStep === 0 || state.currentStep >= config.steps.length - 1) {
+                        showStep(0);
+                    }
+
+                    state.playInterval = setInterval(() => {
+                        // Always call nextStep - it handles the end-of-animation reset
+                        nextStep();
+                    }, 2000);
+                }
+
+                function stopPlaying() {
+                    state.playing = false;
+                    playBtn.classList.remove('active');
+                    playBtn.querySelector('.play-icon').classList.remove('hidden');
+                    playBtn.querySelector('.pause-icon').classList.add('hidden');
+
+                    if (state.playInterval) {
+                        clearInterval(state.playInterval);
+                        state.playInterval = null;
+                    }
+                }
+
+                function togglePlay() {
+                    if (state.playing) {
+                        stopPlaying();
+                    } else {
+                        startPlaying();
+                    }
+                }
+
+                // Event listeners
+                playBtn.addEventListener('click', togglePlay);
+                prevBtn.addEventListener('click', () => { stopPlaying(); prevStep(); });
+                nextBtn.addEventListener('click', () => { stopPlaying(); nextStep(); });
+                resetBtn.addEventListener('click', reset);
+
+                // Keyboard navigation when focused
+                container.setAttribute('tabindex', '0');
+                container.addEventListener('focus', () => { state.focused = true; });
+                container.addEventListener('blur', () => { state.focused = false; });
+                container.addEventListener('keydown', (e) => {
+                    if (!state.focused) return;
+
+                    switch (e.key) {
+                        case ' ':
+                        case 'Space':
+                            e.preventDefault();
+                            togglePlay();
+                            break;
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            stopPlaying();
+                            prevStep();
+                            break;
+                        case 'ArrowRight':
+                            e.preventDefault();
+                            stopPlaying();
+                            nextStep();
+                            break;
+                        case 'r':
+                        case 'R':
+                            e.preventDefault();
+                            reset();
+                            break;
+                    }
+                });
+
+                // Hover exploration mode
+                Object.entries(nodeMap).forEach(([nodeId, nodeEl]) => {
+                    nodeEl.addEventListener('mouseenter', () => {
+                        if (mermaidEl.classList.contains('walkthrough-active')) return;
+
+                        mermaidEl.classList.add('hovering');
+
+                        // Highlight connected nodes and edges
+                        const connections = config.connections[nodeId];
+                        if (!connections) return;
+
+                        const connectedNodes = new Set([nodeId, ...connections.incoming, ...connections.outgoing]);
+                        connectedNodes.forEach(id => {
+                            if (nodeMap[id]) nodeMap[id].classList.add('hover-connected');
+                        });
+
+                        // Find and highlight connected edges
+                        config.edges.forEach((edge, idx) => {
+                            if (edge.from === nodeId || edge.to === nodeId) {
+                                if (edgeMap[idx]) edgeMap[idx].classList.add('hover-connected');
+                            }
+                        });
+
+                        // Show description - find first step that includes this node
+                        const step = config.steps.find(s => s.nodes.includes(nodeId));
+                        if (step) {
+                            descriptionEl.textContent = step.description;
+                        } else {
+                            // Fallback: show node text
+                            const nodeText = nodeEl.textContent?.trim() || nodeId;
+                            descriptionEl.textContent = nodeText;
+                        }
+                    });
+
+                    nodeEl.addEventListener('mouseleave', () => {
+                        if (mermaidEl.classList.contains('walkthrough-active')) return;
+
+                        mermaidEl.classList.remove('hovering');
+                        svg.querySelectorAll('.hover-connected').forEach(el => {
+                            el.classList.remove('hover-connected');
+                        });
+                        descriptionEl.textContent = 'Click play or hover over nodes to explore';
+                    });
+                });
+            });
+        }
 
         function tutorialApp() {
             return {
@@ -7423,7 +8186,7 @@ ENTRYPOINT ["my-cli"]</code></pre>
                 notes: {},
                 showNotesPanel: false,
                 editingNoteId: null,
-                dayTitles: { 1: 'Project Setup', 2: 'Core Models', 3: 'Slash Commands', 4: 'Command Chaining', 5: 'Quality Hooks', 6: 'Context-Aware Skills', 7: 'Subagent Coordination', 8: 'MCP External Tools', 9: 'Integration Testing', 10: 'Plugin Packaging', 11: 'Documentation', 12: 'Documentation', 13: 'Final Testing', 14: 'Release' },
+                dayTitles: { 1: 'Project Setup', 2: 'Core Models', 3: 'Slash Commands', 4: 'Command Chaining', 5: 'Quality Hooks', 6: 'Context-Aware Skills', 7: 'Subagent Coordination', 8: 'MCP External Tools', 9: 'Memory & Context', 10: 'Testing & Packaging', 11: 'Documentation', 12: 'Documentation', 13: 'Final Testing', 14: 'Release' },
                 init() {
                     // Load saved data
                     this.completedDays = JSON.parse(localStorage.getItem('tutorial-completed-days') || '[]');

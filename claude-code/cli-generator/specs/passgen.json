@@ -1,0 +1,182 @@
+{
+  "name": "passgen",
+  "description": "A secure password generator with configurable length and character sets",
+  "version": "1.0.0",
+  "python_version": "3.11",
+  "dependencies": [
+    "click>=8.0.0"
+  ],
+  "global_options": [
+    {
+      "name": "verbose",
+      "short": "v",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "help": "Enable verbose output"
+    },
+    {
+      "name": "quiet",
+      "short": "q",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "help": "Suppress non-essential output"
+    },
+    {
+      "name": "no-color",
+      "short": null,
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "help": "Disable colored output"
+    }
+  ],
+  "commands": [
+    {
+      "name": "generate",
+      "description": "Generate a random password",
+      "arguments": [],
+      "options": [
+        {
+          "name": "length",
+          "short": "l",
+          "type": "int",
+          "required": false,
+          "default": 16,
+          "help": "Password length"
+        },
+        {
+          "name": "uppercase",
+          "short": "U",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "help": "Include uppercase letters (A-Z)"
+        },
+        {
+          "name": "lowercase",
+          "short": "L",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "help": "Include lowercase letters (a-z)"
+        },
+        {
+          "name": "digits",
+          "short": "d",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "help": "Include digits (0-9)"
+        },
+        {
+          "name": "symbols",
+          "short": "s",
+          "type": "bool",
+          "required": false,
+          "default": false,
+          "help": "Include symbols (!@#$%^&*)"
+        },
+        {
+          "name": "exclude",
+          "short": "x",
+          "type": "str",
+          "required": false,
+          "default": "",
+          "help": "Characters to exclude"
+        },
+        {
+          "name": "count",
+          "short": "n",
+          "type": "int",
+          "required": false,
+          "default": 1,
+          "help": "Number of passwords to generate"
+        },
+        {
+          "name": "no-ambiguous",
+          "short": null,
+          "type": "bool",
+          "required": false,
+          "default": false,
+          "help": "Exclude ambiguous characters (0O1lI)"
+        }
+      ],
+      "examples": [
+        "passgen generate -l 24 -s -n 5",
+        "passgen generate --length 20 --no-digits",
+        "passgen generate -l 12 --no-ambiguous"
+      ]
+    },
+    {
+      "name": "strength",
+      "description": "Analyze password strength",
+      "arguments": [
+        {
+          "name": "password",
+          "type": "str",
+          "required": true,
+          "help": "Password to analyze"
+        }
+      ],
+      "options": [
+        {
+          "name": "verbose",
+          "short": "v",
+          "type": "bool",
+          "required": false,
+          "default": false,
+          "help": "Show detailed analysis"
+        },
+        {
+          "name": "min-length",
+          "short": "m",
+          "type": "int",
+          "required": false,
+          "default": 8,
+          "help": "Minimum required password length"
+        }
+      ],
+      "examples": [
+        "passgen strength \"MyP@ssw0rd123\"",
+        "passgen strength \"secret\" --verbose",
+        "passgen strength \"MyPassword\" --min-length 12"
+      ]
+    },
+    {
+      "name": "presets",
+      "description": "List or use predefined password presets",
+      "arguments": [],
+      "options": [
+        {
+          "name": "use",
+          "short": "u",
+          "type": "choice",
+          "required": false,
+          "default": null,
+          "help": "Use a preset (pin, memorable, strong, paranoid)",
+          "choices": ["pin", "memorable", "strong", "paranoid"]
+        },
+        {
+          "name": "list",
+          "short": null,
+          "type": "bool",
+          "required": false,
+          "default": false,
+          "help": "List available presets"
+        }
+      ],
+      "examples": [
+        "passgen presets --list",
+        "passgen presets --use strong",
+        "passgen presets -u paranoid"
+      ]
+    }
+  ],
+  "metadata": {
+    "generator": "cli-generator",
+    "generator_version": "1.0.0",
+    "created_at": "2025-12-27T00:00:00Z"
+  }
+}

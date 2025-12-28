@@ -48,7 +48,7 @@ imgconvert input.png output.jpg --quality 85 --resize 800x600
 flowchart TD
     subgraph Week1["Week 1: Foundation"]
         direction TB
-        D1["Day 1<br/>Project Setup + CLAUDE.md"]
+        D1["Day 1<br/>Project Setup + Configuration"]
         D2["Day 2<br/>Core Models + Generator Engine"]
         D3["Day 3<br/>First Slash Commands"]
         D4["Day 4<br/>Command Chaining"]
@@ -61,8 +61,8 @@ flowchart TD
         D6["Day 6<br/>Context-Aware Skills"]
         D7["Day 7<br/>Subagent Coordination"]
         D8["Day 8<br/>MCP External Tools"]
-        D9["Day 9<br/>Integration Testing"]
-        D10["Day 10<br/>Plugin Packaging"]
+        D9["Day 9<br/>Memory & Context"]
+        D10["Day 10<br/>Testing & Packaging"]
         D6 --> D7 --> D8 --> D9 --> D10
     end
 
@@ -106,7 +106,7 @@ flowchart TD
 
 ### Week 1: Foundation
 
-- [Day 1: Project Setup + CLAUDE.md](#day-1-project-setup--claudemd)
+- [Day 1: Project Setup + Configuration](#day-1-project-setup--configuration)
 - [Day 2: Core Models + Generator Engine](#day-2-core-models--generator-engine)
 - [Day 3: Your First Slash Commands](#day-3-your-first-slash-commands)
 - [Day 4: More Commands + Command Chaining](#day-4-more-commands--command-chaining)
@@ -117,8 +117,8 @@ flowchart TD
 - [Day 6: Context-Aware Skills](#day-6-context-aware-skills)
 - [Day 7: Subagent Coordination](#day-7-subagent-coordination)
 - [Day 8: MCP External Tools](#day-8-mcp-external-tools)
-- [Day 9: Integration Testing](#day-9-integration-testing)
-- [Day 10: Plugin Packaging](#day-10-plugin-packaging)
+- [Day 9: Memory & Context Management](#day-9-memory--context-management)
+- [Day 10: Testing & Packaging](#day-10-testing--packaging)
 
 ### Week 3: Polish
 
@@ -137,14 +137,14 @@ flowchart TD
 
 ---
 
-## Day 1: Project Setup + CLAUDE.md
+## Day 1: Project Setup + Configuration
 
 ### 📍 Where You Are
 
 ```mermaid
 flowchart LR
     subgraph Week1["Week 1: Foundation"]
-        D1["📍 Day 1<br/>CLAUDE.md"]
+        D1["📍 Day 1<br/>Configuration"]
         D2["Day 2<br/>Models"]
         D3["Day 3<br/>Commands"]
         D4["Day 4<br/>Chaining"]
@@ -545,12 +545,152 @@ Claude should:
 
 ---
 
+### Settings & Permissions
+
+Beyond CLAUDE.md, Claude Code uses `settings.json` files to control behavior and permissions.
+
+#### Settings File Locations
+
+| File | Scope | Use Case |
+|------|-------|----------|
+| `~/.claude/settings.json` | User-level | Personal preferences across all projects |
+| `.claude/settings.json` | Project-level | Team-shared project settings |
+| `.claude/settings.local.json` | Local-only | Personal overrides (not committed) |
+
+**Settings Hierarchy:** Enterprise → User → Project → Local (later files override earlier ones)
+
+#### Permissions Configuration
+
+Control what Claude can do automatically:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Write(./src/**)",
+      "Write(./tests/**)",
+      "Bash(npm:*)",
+      "Bash(git:*)",
+      "Bash(pytest:*)"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Write(*.secret)",
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)"
+    ]
+  }
+}
+```
+
+**Permission Patterns:**
+- `ToolName` - Allow all uses of tool
+- `ToolName(*)` - Allow with any argument
+- `ToolName(pattern)` - Allow matching calls only (supports globs)
+
+**Deny rules override allow rules.** Claude walks the list from first to last.
+
+#### Create Project Settings
+
+Create `.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Write(./src/**)",
+      "Write(./tests/**)",
+      "Write(./generated/**)",
+      "Bash(uv:*)",
+      "Bash(pytest:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Write(.env*)"
+    ]
+  }
+}
+```
+
+> 💡 **Use `/permissions` command** to interactively add or remove tool permissions.
+
+---
+
+### Status Line Configuration
+
+The status line displays contextual information at the bottom of Claude Code.
+
+#### Quick Setup
+
+Use the `/statusline` command:
+
+```
+/statusline show model name and token usage
+```
+
+#### Manual Configuration
+
+Add to your settings.json:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  }
+}
+```
+
+Create `~/.claude/statusline.sh`:
+
+```bash
+#!/bin/bash
+# Read JSON from stdin, output formatted status
+
+read -r json
+model=$(echo "$json" | jq -r '.model // "unknown"')
+tokens=$(echo "$json" | jq -r '.contextTokens // 0')
+max=$(echo "$json" | jq -r '.maxTokens // 200000')
+percent=$((tokens * 100 / max))
+
+echo "🤖 $model | 📊 ${percent}% context"
+```
+
+Make it executable:
+
+```bash
+chmod +x ~/.claude/statusline.sh
+```
+
+#### Third-Party Status Lines
+
+For more advanced status lines:
+
+```bash
+# ccstatusline - Beautiful powerline themes
+npx ccstatusline@latest
+
+# ccusage - Cost tracking
+pip install ccusage
+```
+
+---
+
 ### ✅ Day 1 Checklist
 
 - [ ] Project structure created
 - [ ] Dependencies installed with uv
 - [ ] CLAUDE.md comprehensive and tested
 - [ ] Rules files created
+- [ ] Project settings.json with permissions configured
+- [ ] Status line configured (optional but recommended)
 - [ ] Fresh Claude session reads context correctly
 
 ### 📝 Exercise: CLAUDE.md Stress Test
@@ -573,7 +713,7 @@ Try these prompts in a fresh session:
 ```mermaid
 flowchart LR
     subgraph Week1["Week 1: Foundation"]
-        D1["✅ Day 1<br/>CLAUDE.md"]
+        D1["✅ Day 1<br/>Configuration"]
         D2["📍 Day 2<br/>Models"]
         D3["Day 3<br/>Commands"]
         D4["Day 4<br/>Chaining"]
@@ -2087,7 +2227,7 @@ Check that:
 ```mermaid
 flowchart LR
     subgraph Week1["Week 1: Foundation"]
-        D1["✅ Day 1<br/>CLAUDE.md"]
+        D1["✅ Day 1<br/>Configuration"]
         D2["✅ Day 2<br/>Models"]
         D3["📍 Day 3<br/>Commands"]
         D4["Day 4<br/>Chaining"]
@@ -2713,7 +2853,7 @@ Claude: [long explanation and code]
 ```mermaid
 flowchart LR
     subgraph Week1["Week 1: Foundation"]
-        D1["✅ Day 1<br/>CLAUDE.md"]
+        D1["✅ Day 1<br/>Configuration"]
         D2["✅ Day 2<br/>Models"]
         D3["✅ Day 3<br/>Commands"]
         D4["📍 Day 4<br/>Chaining"]
@@ -3042,7 +3182,7 @@ Observe:
 ```mermaid
 flowchart LR
     subgraph Week1["Week 1: Foundation"]
-        D1["✅ Day 1<br/>CLAUDE.md"]
+        D1["✅ Day 1<br/>Configuration"]
         D2["✅ Day 2<br/>Models"]
         D3["✅ Day 3<br/>Commands"]
         D4["✅ Day 4<br/>Chaining"]
@@ -3652,8 +3792,8 @@ flowchart LR
         D6["📍 Day 6<br/>Skills"]
         D7["Day 7<br/>Subagents"]
         D8["Day 8<br/>MCP"]
-        D9["Day 9<br/>Testing"]
-        D10["Day 10<br/>Plugins"]
+        D9["Day 9<br/>Memory"]
+        D10["Day 10<br/>Testing"]
         D6 --> D7 --> D8 --> D9 --> D10
     end
 
@@ -4557,8 +4697,8 @@ flowchart LR
         D6["✅ Day 6<br/>Skills"]
         D7["📍 Day 7<br/>Subagents"]
         D8["Day 8<br/>MCP"]
-        D9["Day 9<br/>Testing"]
-        D10["Day 10<br/>Plugins"]
+        D9["Day 9<br/>Memory"]
+        D10["Day 10<br/>Testing"]
         D6 --> D7 --> D8 --> D9 --> D10
     end
 
@@ -5596,8 +5736,8 @@ flowchart LR
         D6["✅ Day 6<br/>Skills"]
         D7["✅ Day 7<br/>Subagents"]
         D8["📍 Day 8<br/>MCP"]
-        D9["Day 9<br/>Testing"]
-        D10["Day 10<br/>Plugins"]
+        D9["Day 9<br/>Memory"]
+        D10["Day 10<br/>Testing"]
         D6 --> D7 --> D8 --> D9 --> D10
     end
 
@@ -6506,7 +6646,7 @@ class TestDependencyValidator:
 
 ---
 
-## Day 9: Integration Testing
+## Day 9: Memory & Context Management
 
 ### 📍 Where You Are
 
@@ -6520,8 +6660,8 @@ flowchart LR
         D6["✅ Day 6<br/>Skills"]
         D7["✅ Day 7<br/>Subagents"]
         D8["✅ Day 8<br/>MCP"]
-        D9["📍 Day 9<br/>Testing"]
-        D10["Day 10<br/>Plugins"]
+        D9["📍 Day 9<br/>Memory"]
+        D10["Day 10<br/>Testing"]
         D6 --> D7 --> D8 --> D9 --> D10
     end
 
@@ -6536,9 +6676,240 @@ flowchart LR
 
 ### 🎓 Learning Objectives
 
+- Understand context window management
+- Master session persistence and resumption
+- Implement cross-session memory with MCP
+
+---
+
+### Understanding Context Windows
+
+Claude Code has a limited context window. As conversations grow, older content gets compressed or removed.
+
+#### Auto-Compaction
+
+When your conversation reaches ~75-95% of the context window, Claude Code automatically:
+
+1. Analyzes the conversation to identify key information
+2. Creates a concise summary of previous interactions
+3. Replaces old messages with the compressed summary
+4. Continues seamlessly with preserved context
+
+```mermaid
+flowchart LR
+    A[Long Conversation] --> B{Context at 75%?}
+    B -->|No| C[Continue Normally]
+    B -->|Yes| D[Auto-Compact]
+    D --> E[Summarize Key Points]
+    E --> F[Replace Old Content]
+    F --> G[Continue with Summary]
+
+    style D fill:#ffc107
+    style E fill:#ffc107
+    style F fill:#ffc107
+```
+
+#### Manual Compaction
+
+Use `/compact` with custom instructions:
+
+```
+/compact preserve all TODOs and current file being edited
+```
+
+Or clear entirely with `/clear` to start fresh.
+
+> 💡 **Best Practice:** Manually compact at logical breakpoints (after completing a feature) rather than waiting for auto-compact mid-task.
+
+---
+
+### Session Persistence
+
+Claude Code can resume previous conversations:
+
+```bash
+# Continue most recent session
+claude -c
+claude --continue
+
+# Resume specific session by ID
+claude -r "session-id"
+claude --resume "session-id"
+
+# Interactive session picker
+claude --resume
+```
+
+#### When to Use Session Resume
+
+| Scenario | Recommended Approach |
+|----------|---------------------|
+| Continuing same task next day | `claude -c` |
+| Switching between projects | `claude --resume` (picker) |
+| Reference old conversation | `claude -r "session-id"` |
+| Starting fresh with clean context | `claude` (new session) |
+
+---
+
+### MCP-Based Persistent Memory
+
+For true cross-session memory, use an MCP memory service.
+
+#### Installing claude-mem
+
+```bash
+# In Claude Code, install the plugin
+/plugin marketplace add thedotmack/claude-mem
+/plugin install claude-mem
+
+# Restart Claude Code
+```
+
+#### How claude-mem Works
+
+```mermaid
+flowchart TB
+    subgraph Session1["Session 1"]
+        A1[Your Work] --> B1[Tool Observations]
+        B1 --> C1[AI Compression]
+        C1 --> D1[Store in DB]
+    end
+
+    subgraph Storage["Persistent Storage"]
+        D1 --> DB[(SQLite + ChromaDB)]
+    end
+
+    subgraph Session2["Session 2"]
+        DB --> E2[Semantic Search]
+        E2 --> F2[Inject Context]
+        F2 --> G2[Claude Has Memory!]
+    end
+
+    style DB fill:#4caf50
+```
+
+**Key Features:**
+- 🧠 Persistent memory across sessions
+- 📊 Progressive disclosure (only loads relevant context)
+- 🔍 Semantic search of project history
+- 🖥️ Web viewer at `http://localhost:37777`
+
+#### Using Memory Search
+
+With claude-mem installed, use the `/mem-search` skill:
+
+```
+"What bugs did we fix last session?"
+"How did we implement the spec generator?"
+"Show me recent changes to cli.py"
+```
+
+Claude will automatically search memory when questions reference past work.
+
+---
+
+### Memory Best Practices
+
+#### 1. Structure Work for Memory
+
+Break large tasks into clear milestones that create meaningful memory entries:
+
+```
+# Instead of:
+"Build the entire CLI generator"
+
+# Do:
+"Implement the CLISpec model"
+"Create the spec generator"
+"Add validation for specs"
+```
+
+#### 2. Use Explicit Summaries
+
+Before ending a session, ask Claude to summarize:
+
+```
+Summarize what we accomplished today, any pending TODOs,
+and decisions we made about the architecture.
+```
+
+#### 3. Reference Previous Work
+
+Start new sessions by asking about context:
+
+```
+What was I working on in this project recently?
+What are the pending TODOs?
+```
+
+#### 4. Clean Up Periodically
+
+Memory databases grow over time. Periodically clean old entries:
+
+```bash
+# If using claude-mem
+/claude-mem:troubleshoot
+```
+
+---
+
+### Alternative Memory Solutions
+
+| Solution | Best For |
+|----------|----------|
+| **claude-mem** | Full-featured, AI-compressed memory |
+| **mcp-memory-service** | Simple key-value persistence |
+| **mcp-knowledge-graph** | Relationship-rich project knowledge |
+| **CLAUDE.md updates** | Manual but version-controlled |
+
+---
+
+### ✅ Day 9 Checklist
+
+- [ ] Understand auto-compaction and when it triggers
+- [ ] Practice manual `/compact` with custom instructions
+- [ ] Use session resume (`claude -c`, `claude --resume`)
+- [ ] Install and configure a memory MCP (claude-mem recommended)
+- [ ] Test memory persistence across sessions
+- [ ] Establish memory best practices for the project
+
+---
+
+## Day 10: Testing & Packaging
+
+### 📍 Where You Are
+
+```mermaid
+flowchart LR
+    subgraph Week1["Week 1: Foundation ✅"]
+        D1["Day 1"] --> D2["Day 2"] --> D3["Day 3"] --> D4["Day 4"] --> D5["Day 5"]
+    end
+
+    subgraph Week2["Week 2: Intelligence"]
+        D6["✅ Day 6<br/>Skills"]
+        D7["✅ Day 7<br/>Subagents"]
+        D8["✅ Day 8<br/>MCP"]
+        D9["✅ Day 9<br/>Memory"]
+        D10["📍 Day 10<br/>Testing"]
+        D6 --> D7 --> D8 --> D9 --> D10
+    end
+
+    Week1 --> Week2
+
+    style Week1 fill:#9e9e9e
+    style D6 fill:#9e9e9e,color:#fff
+    style D7 fill:#9e9e9e,color:#fff
+    style D8 fill:#9e9e9e,color:#fff
+    style D9 fill:#9e9e9e,color:#fff
+    style D10 fill:#4caf50,color:#fff
+```
+
+### 🎓 Learning Objectives
+
 - Test the complete workflow end-to-end
 - Verify all components work together
 - Create golden tests for regression prevention
+- Package your Claude Code constructs for sharing
 
 ---
 
@@ -7122,56 +7493,11 @@ fi
 
 ---
 
-### ✅ Day 9 Checklist
+### Plugin Packaging
 
-- [ ] End-to-end integration tests passing
-- [ ] Hook integration tests passing
-- [ ] Skill integration tests passing
-- [ ] MCP integration tests passing
-- [ ] Golden tests for regression prevention
-- [ ] Full workflow tested: description → working CLI
-- [ ] Test runner script created
+Now let's package everything as a distributable plugin.
 
----
-
-## Day 10: Plugin Packaging
-
-### 📍 Where You Are
-
-```mermaid
-flowchart LR
-    subgraph Week1["Week 1: Foundation ✅"]
-        D1["Day 1"] --> D2["Day 2"] --> D3["Day 3"] --> D4["Day 4"] --> D5["Day 5"]
-    end
-
-    subgraph Week2["Week 2: Intelligence"]
-        D6["✅ Day 6<br/>Skills"]
-        D7["✅ Day 7<br/>Subagents"]
-        D8["✅ Day 8<br/>MCP"]
-        D9["✅ Day 9<br/>Testing"]
-        D10["📍 Day 10<br/>Plugins"]
-        D6 --> D7 --> D8 --> D9 --> D10
-    end
-
-    Week1 --> Week2
-
-    style Week1 fill:#9e9e9e
-    style D6 fill:#9e9e9e,color:#fff
-    style D7 fill:#9e9e9e,color:#fff
-    style D8 fill:#9e9e9e,color:#fff
-    style D9 fill:#9e9e9e,color:#fff
-    style D10 fill:#4caf50,color:#fff
-```
-
-### 🎓 Learning Objectives
-
-- Package your Claude Code constructs for sharing
-- Create installation instructions
-- Document for users
-
----
-
-### Plugin Structure
+#### Plugin Structure
 
 Create `.claude/plugins/cli-generator/`:
 
@@ -7215,7 +7541,7 @@ Create `.claude/plugins/cli-generator/`:
 
 ---
 
-### Plugin Manifest
+#### Plugin Manifest
 
 Create `.claude/plugins/cli-generator/plugin.yaml`:
 
@@ -7299,7 +7625,7 @@ keywords:
 
 ---
 
-### Installation Instructions
+#### Installation Instructions
 
 Create `.claude/plugins/cli-generator/install.md`:
 
@@ -7418,7 +7744,7 @@ uv pip uninstall click rich pydantic pydantic-ai jinja2 httpx
 
 ---
 
-### Plugin Documentation
+#### Plugin Documentation
 
 Create `.claude/plugins/cli-generator/README.md`:
 
@@ -7587,7 +7913,7 @@ MIT
 
 ---
 
-### Requirements File
+#### Requirements File
 
 Create `.claude/plugins/cli-generator/requirements.txt`:
 
@@ -7608,7 +7934,7 @@ isort>=5.12
 
 ---
 
-### Plugin Installation Script
+#### Plugin Installation Script
 
 Create `.claude/plugins/cli-generator/install.sh`:
 
@@ -7673,6 +7999,16 @@ echo "  3. Try: /design \"A simple test CLI\""
 
 ### ✅ Day 10 Checklist
 
+**Integration Testing:**
+- [ ] End-to-end integration tests passing
+- [ ] Hook integration tests passing
+- [ ] Skill integration tests passing
+- [ ] MCP integration tests passing
+- [ ] Golden tests for regression prevention
+- [ ] Full workflow tested: description → working CLI
+- [ ] Test runner script created
+
+**Plugin Packaging:**
 - [ ] Plugin directory structure created
 - [ ] plugin.yaml manifest complete
 - [ ] Installation instructions written

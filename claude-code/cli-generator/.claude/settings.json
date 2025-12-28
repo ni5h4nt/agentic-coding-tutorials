@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Edit(src/**)",
+      "Edit(tests/**)",
+      "Edit(generated/**)",
+      "Bash(uv:*)",
+      "Bash(pytest:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Edit(.env*)",
+      "Bash(:*sudo:*)",
+      "Bash(:*eval:*)",
+      "Bash(:*exec:*)"
+    ]
+  }
+}
