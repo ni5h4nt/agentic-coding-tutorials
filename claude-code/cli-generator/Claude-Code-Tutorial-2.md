@@ -3175,7 +3175,7 @@ Observe:
 
 ---
 
-## Day 5: Quality Hooks
+## Day 5: Claude Code Hooks
 
 ### 📍 Where You Are
 
@@ -3199,578 +3199,565 @@ flowchart LR
 
 ### 🎓 Learning Objectives
 
-- Automate quality checks
-- Understand hook lifecycle
-- Prevent common errors automatically
+- Understand Claude Code's hook system
+- Configure hooks in `settings.json`
+- Write hook scripts that receive JSON and use exit codes
+- Block dangerous operations automatically
 
 ---
 
-### What Are Hooks?
+### What Are Claude Code Hooks?
 
-Hooks run automatically at specific points without explicit invocation:
+Hooks are **shell commands that Claude Code runs automatically** at specific lifecycle points. They're configured in `.claude/settings.json` and can:
 
-- **Pre-hooks:** Run before an action (can block)
-- **Post-hooks:** Run after an action (can alert)
+- **Block operations** by exiting with code 2
+- **Inject context** by printing to stdout
+- **Log/monitor** without affecting execution
+
+> **Key Concept:** Unlike slash commands (which you invoke) or skills (which Claude decides to use), **hooks run automatically** when their trigger event occurs.
+
+```
+Claude tries to write file → PreToolUse hook runs → Hook decides allow/block
+```
 
 ```mermaid
 flowchart LR
-    A[User Action] --> B{Pre-Hook}
-    B -->|Pass| C[Execute Action]
-    B -->|Fail| D[Block + Show Error]
-    C --> E{Post-Hook}
-    E -->|Pass| F[Report Success]
-    E -->|Warn| G[Report with Warnings]
+    A[Claude Tool Call] --> B[PreToolUse Hook]
+    B -->|Exit 0| C[Execute Tool]
+    B -->|Exit 2| D[BLOCKED]
+    C --> E[PostToolUse Hook]
+    E --> F[Continue]
+    D --> G[Error to Claude]
+    G --> H[Claude Adjusts]
 ```
 
 ---
 
-### Hook 1: Spec Validation
+### The 8 Hook Types
 
-**Trigger:** Before any code generation.
+Claude Code provides eight distinct hooks that fire at different lifecycle stages:
 
-**Create:** `.claude/hooks/validate_spec.md`
+| Hook | When It Fires | Can Block? | Use Case |
+|------|--------------|------------|----------|
+| `PreToolUse` | Before tool execution | Yes | Block dangerous writes, validate inputs |
+| `PostToolUse` | After tool completes | No | Validate output, run linters |
+| `UserPromptSubmit` | When user sends message | Yes | Inject context, validate prompts |
+| `Stop` | When Claude finishes responding | Yes | Run tests, verify completion |
+| `SubagentStop` | When a subagent completes | Yes | Validate subagent output |
+| `Notification` | On notifications | No | Custom notification handling |
+| `PreCompact` | Before context compaction | No | Save important context |
+| `SessionStart` | When session begins | No | Load project context |
 
-```markdown
-# Spec Validation Hook
+### Exit Codes Control Flow
 
-## Trigger
-
-Before: Code generation from CLISpec
-After: Spec is parsed and loaded
-
-## Purpose
-
-Prevent generation of invalid or problematic CLI designs.
-
-## Validation Rules
-
-### Structural Validation
-
-1. CLI name is valid Python package name
-2. No duplicate command names
-3. No duplicate option names within command
-4. No duplicate short options within command
-5. Required arguments come before optional ones
-6. Choice options have choices defined
-
-### Semantic Validation
-
-1. CLI has at least one command (or is single-command)
-2. Each command has a description
-3. Options with defaults are not marked required
-4. Short options are single characters
-5. No reserved option names (--help, --version handled by Click)
-
-### Security Validation
-
-1. No suspicious patterns in names (eval, exec, rm -rf, etc.)
-2. No shell injection risks in examples
-3. No hardcoded paths to system directories
-
-## On Validation Failure
-```
-
-# ⚠️ Spec Validation Failed
-
-Errors (must fix):
-✗ Duplicate command name: 'list' appears twice
-✗ Option 'verbose' has both -v short and --quiet has -v short
-
-Warnings (should fix):
-⚡ Command 'delete' has no confirmation flag
-⚡ No examples provided for 'export' command
-
-Validation blocked code generation.
-Run /refine to fix issues, then /generate again.
-
-````
-
-## Implementation
-
-```python
-# src/cli_generator/validators/spec_validator.py
-
-from ..models import CLISpec
-
-class SpecValidationError(Exception):
-    def __init__(self, errors: list[str], warnings: list[str]):
-        self.errors = errors
-        self.warnings = warnings
-
-def validate_spec(spec: CLISpec) -> tuple[list[str], list[str]]:
-    """Validate a CLISpec. Returns (errors, warnings)."""
-    errors = []
-    warnings = []
-
-    # Check for duplicate commands
-    cmd_names = [cmd.name for cmd in spec.commands]
-    if len(cmd_names) != len(set(cmd_names)):
-        duplicates = [n for n in cmd_names if cmd_names.count(n) > 1]
-        errors.append(f"Duplicate command names: {set(duplicates)}")
-
-    # Check each command
-    for cmd in spec.commands:
-        # Check for duplicate options
-        opt_names = [opt.name for opt in cmd.options]
-        if len(opt_names) != len(set(opt_names)):
-            errors.append(f"Duplicate options in '{cmd.name}'")
-
-        # Check short options
-        shorts = [opt.short for opt in cmd.options if opt.short]
-        if len(shorts) != len(set(shorts)):
-            errors.append(f"Duplicate short options in '{cmd.name}'")
-
-        # Warnings
-        if not cmd.examples:
-            warnings.append(f"No examples for '{cmd.name}'")
-
-        if cmd.name in ['delete', 'remove', 'rm', 'clean']:
-            has_confirm = any(
-                opt.name in ['confirm', 'force', 'yes']
-                for opt in cmd.options
-            )
-            if not has_confirm:
-                warnings.append(f"'{cmd.name}' has no confirmation flag")
-
-    return errors, warnings
-````
-
-````
+| Exit Code | Meaning | Effect |
+|-----------|---------|--------|
+| `exit(0)` | Success | Allow operation, stdout shown to user |
+| `exit(2)` | Block | Stop operation, stderr fed back to Claude |
+| `exit(1)` | Error | Non-blocking, stderr shown to user only |
 
 ---
 
-### Hook 2: Code Syntax Validation
+### Step 1: Configure Hooks in settings.json
 
-**Trigger:** After code is generated, before reporting success.
+Hook configuration lives in `.claude/settings.json`. Add a `hooks` section:
 
-**Create:** `.claude/hooks/validate_code.md`
-
-```markdown
-# Code Syntax Validation Hook
-
-## Trigger
-After: Python files are generated
-Before: Success message shown to user
-
-## Purpose
-Ensure generated code is syntactically valid Python.
-
-## Validation Steps
-
-### 1. Syntax Check
-Compile each .py file without executing:
-```python
-import ast
-ast.parse(code)
-````
-
-### 2. Import Check
-
-Verify imports resolve:
-
-```python
-import importlib.util
-spec = importlib.util.spec_from_file_location(name, path)
-# Doesn't execute, just checks imports
+```json
+{
+  "permissions": {
+    "allow": ["Read(**)", "Edit(src/**)", "Edit(generated/**)"],
+    "deny": ["Bash(rm -rf:*)", "Edit(.env*)"]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "uv run python .claude/hooks/pre_tool_use.py" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          { "type": "command", "command": "uv run python .claude/hooks/post_tool_use.py" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "uv run python .claude/hooks/stop.py" }
+        ]
+      }
+    ]
+  }
+}
 ```
 
-### 3. Click Decorator Check
-
-Verify Click decorators are valid:
-
-- @click.command() on functions
-- @click.option() has required parameters
-- @click.argument() before @click.option()
-
-## On Validation Failure
-
-```
-⚠️ Generated Code Validation Failed
-====================================
-
-Syntax Error in cli.py:
-  Line 45: SyntaxError: unexpected EOF while parsing
-
-  Context:
-    43 | @click.option("--output")
-    44 | def convert(input_file, output
-    45 |     # Missing closing parenthesis
-        ^
-
-Files kept for debugging: ./generated/broken-cli/
-
-Fix manually or regenerate with:
-  /generate --regenerate
-```
-
-## Implementation
-
-```python
-# src/cli_generator/validators/code_validator.py
-
-import ast
-from pathlib import Path
-
-class CodeValidationError(Exception):
-    def __init__(self, file: str, line: int, message: str):
-        self.file = file
-        self.line = line
-        self.message = message
-
-def validate_python_file(path: Path) -> list[CodeValidationError]:
-    """Validate a Python file. Returns list of errors."""
-    errors = []
-    code = path.read_text()
-
-    try:
-        ast.parse(code)
-    except SyntaxError as e:
-        errors.append(CodeValidationError(
-            file=str(path),
-            line=e.lineno or 0,
-            message=str(e)
-        ))
-
-    return errors
-
-def validate_generated_cli(cli_path: Path) -> list[CodeValidationError]:
-    """Validate all Python files in generated CLI."""
-    errors = []
-
-    for py_file in cli_path.rglob("*.py"):
-        errors.extend(validate_python_file(py_file))
-
-    return errors
-```
-
-````
+> **Format:** `matcher` is a regex string matching tool names (`"Write|Edit"` matches both). Empty string `""` matches all. The `hooks` array contains command objects with `type: "command"`.
 
 ---
 
-### Hook 3: Dangerous Pattern Detection
+### Step 2: Create Hook Scripts
 
-**Trigger:** During spec generation and code generation.
+Hook scripts receive JSON via stdin and communicate via exit codes.
 
-**Create:** `.claude/hooks/security_check.md`
+#### Hook 1: PreToolUse - Security Validation
 
-```markdown
-# Security Check Hook
-
-## Trigger
-- During: Spec generation from natural language
-- During: Code generation from spec
-- During: Implementation of commands
-
-## Purpose
-Prevent generation of potentially dangerous code.
-
-## Blocked Patterns
-
-### In Specifications
-- Command names: `rm`, `delete_all`, `sudo`, `root`
-- Option names: `password`, `secret`, `token` (without being marked sensitive)
-- Examples containing: `rm -rf`, `sudo`, `| sh`, `eval`
-
-### In Generated Code
-- Functions: `eval()`, `exec()`, `compile()`
-- Modules: `subprocess.shell=True`, `os.system()`
-- Patterns: `__import__`, `globals()`, `locals()`
-
-### In Paths
-- System directories: `/etc`, `/usr`, `/bin`, `C:\Windows`
-- Home expansion without validation: `~/.ssh`, `~/.aws`
-
-## On Detection
-
-````
-
-# 🛑 Security Check Failed
-
-Blocked pattern detected:
-
-Location: Command 'execute' implementation
-Pattern: subprocess.call(..., shell=True)
-Risk: Shell injection vulnerability
-
-Suggestion: Use subprocess.call([...], shell=False) with list args
-
-Generation blocked. Review and fix security issue.
-
-To bypass (not recommended):
-/generate --allow-unsafe
-
-````
-
-## Allowed Exceptions
-Some patterns are okay in context:
-- `os.remove()` for file deletion commands (with confirmation)
-- Path expansion when validated
-- subprocess with shell=False
-
-## Implementation
+Create `.claude/hooks/pre_tool_use.py`:
 
 ```python
-# src/cli_generator/validators/security_validator.py
+#!/usr/bin/env python3
+"""
+PreToolUse Hook: Runs BEFORE Claude writes/edits files.
+Blocks dangerous patterns in generated code.
 
+Exit codes:
+  0 = Allow the operation
+  2 = BLOCK the operation (stderr sent to Claude)
+"""
+import json
 import re
-from dataclasses import dataclass
+import sys
 
-@dataclass
-class SecurityIssue:
-    severity: str  # "blocked" or "warning"
-    location: str
-    pattern: str
-    risk: str
-    suggestion: str
-
-BLOCKED_PATTERNS = [
-    (r'\beval\s*\(', 'eval() function', 'Code injection'),
-    (r'\bexec\s*\(', 'exec() function', 'Code injection'),
-    (r'shell\s*=\s*True', 'shell=True', 'Shell injection'),
-    (r'\bos\.system\s*\(', 'os.system()', 'Shell injection'),
-    (r'rm\s+-rf\s+/', 'rm -rf /', 'System destruction'),
+# Patterns that should NEVER appear in generated CLIs
+DANGEROUS_PATTERNS = [
+    (r"\beval\s*\(", "eval() is forbidden"),
+    (r"\bexec\s*\(", "exec() is forbidden"),
+    (r"shell\s*=\s*True", "shell=True is forbidden"),
+    (r"\bos\.system\s*\(", "os.system() is forbidden"),
 ]
 
-def check_code_security(code: str, location: str) -> list[SecurityIssue]:
-    """Check code for security issues."""
-    issues = []
-
-    for pattern, name, risk in BLOCKED_PATTERNS:
-        if re.search(pattern, code):
-            issues.append(SecurityIssue(
-                severity="blocked",
-                location=location,
-                pattern=name,
-                risk=risk,
-                suggestion=f"Remove or replace {name}"
-            ))
-
-    return issues
-````
-
-````
-
----
-
-### Hook 4: Test Coverage Check
-
-**Trigger:** After tests are generated or run.
-
-**Create:** `.claude/hooks/coverage_check.md`
-
-```markdown
-# Test Coverage Check Hook
-
-## Trigger
-After: Tests are run with /test
-After: Tests are generated with /generate --with-tests
-
-## Purpose
-Ensure generated CLIs have adequate test coverage.
-
-## Coverage Requirements
-
-### Minimum Coverage
-- Overall: 80%
-- Each command: At least one test
-- Error paths: At least one test per error type
-
-### Required Test Types
-For each command:
-- [ ] Happy path (normal usage)
-- [ ] Help text (--help works)
-- [ ] Invalid input (proper error)
-- [ ] Missing required args (proper error)
-
-### Global Tests
-- [ ] CLI --help
-- [ ] CLI --version
-- [ ] Unknown command error
-
-## On Check Failure
-
-````
-
-# ⚠️ Coverage Check Warning
-
-Coverage: 65% (minimum: 80%)
-
-Missing tests:
-Commands without happy path test: - 'export' command
-
-Commands without error test: - 'compress' command - 'resize' command
-
-Untested error handlers: - cli.py:89-94 (FileNotFoundError) - cli.py:112-115 (PermissionError)
-
-Generate missing tests?
-/test --generate-missing
-
-````
-
-## Implementation
-
-```python
-# src/cli_generator/validators/coverage_validator.py
-
-from dataclasses import dataclass
-
-@dataclass
-class CoverageReport:
-    overall_percent: float
-    commands_tested: dict[str, bool]
-    missing_tests: list[str]
-    untested_lines: list[tuple[str, int, int]]
-
-def check_test_coverage(
-    cli_path: str,
-    coverage_data: dict
-) -> CoverageReport:
-    """Analyze test coverage for a generated CLI."""
-    # Parse coverage.py output
-    # Identify gaps
-    # Return structured report
-    pass
-````
-
-````
-
----
-
-### Integrating Hooks
-
-Hooks are called from your generators. Update `code_generator.py`:
-
-```python
-# src/cli_generator/generators/code_generator.py
-
-from ..validators.spec_validator import validate_spec, SpecValidationError
-from ..validators.code_validator import validate_generated_cli
-from ..validators.security_validator import check_code_security
-
-class CodeGenerator:
-    def generate(self, spec: CLISpec, output_dir: Path) -> dict[str, Path]:
-        # Pre-generation hooks
-        errors, warnings = validate_spec(spec)
-        if errors:
-            raise SpecValidationError(errors, warnings)
-
-        if warnings:
-            console.print(f"[yellow]Warnings: {warnings}[/yellow]")
-
-        # Generate code
-        files = self._generate_files(spec, output_dir)
-
-        # Post-generation hooks
-        code_errors = validate_generated_cli(output_dir / spec.name)
-        if code_errors:
-            raise CodeValidationError(code_errors)
-
-        for path in files.values():
-            if path.suffix == ".py":
-                security_issues = check_code_security(
-                    path.read_text(),
-                    str(path)
-                )
-                if any(i.severity == "blocked" for i in security_issues):
-                    raise SecurityError(security_issues)
-
-        return files
-````
-
----
-
-### Testing Your Hooks
-
-Create intentionally bad inputs:
-
-```python
-# tests/unit/test_hooks.py
-
-import pytest
-from cli_generator.models import CLISpec, CommandSpec
-from cli_generator.validators.spec_validator import validate_spec
-from cli_generator.validators.security_validator import check_code_security
+FORBIDDEN_PATHS = [".env", "credentials", "secrets", "/etc/", "/usr/"]
 
 
-class TestSpecValidationHook:
-    """Tests for spec validation hook."""
+def main():
+    try:
+        # Hooks receive JSON input via stdin
+        input_data = json.load(sys.stdin)
 
-    def test_catches_duplicate_commands(self):
-        """Duplicate command names should be caught."""
-        spec = CLISpec(
-            name="test",
-            description="Test CLI",
-            commands=[
-                CommandSpec(name="list", description="List items"),
-                CommandSpec(name="list", description="List again"),  # Duplicate!
-            ]
-        )
+        tool_name = input_data.get("tool_name", "")
+        tool_input = input_data.get("tool_input", {})
 
-        errors, warnings = validate_spec(spec)
-        assert len(errors) > 0
-        assert "Duplicate" in errors[0]
+        # Only check Write and Edit operations
+        if tool_name not in ["Write", "Edit"]:
+            sys.exit(0)  # Allow other tools
 
-    def test_warns_on_delete_without_confirm(self):
-        """Delete commands without confirmation should warn."""
-        spec = CLISpec(
-            name="test",
-            description="Test CLI",
-            commands=[
-                CommandSpec(name="delete", description="Delete items"),
-            ]
-        )
+        file_path = tool_input.get("file_path", "")
 
-        errors, warnings = validate_spec(spec)
-        assert len(warnings) > 0
-        assert "confirmation" in warnings[0].lower()
+        # Check forbidden paths
+        for forbidden in FORBIDDEN_PATHS:
+            if forbidden in file_path.lower():
+                print(f"BLOCKED: Cannot write to '{file_path}'", file=sys.stderr)
+                sys.exit(2)  # Exit 2 = BLOCK
+
+        # Check content for dangerous patterns (Write tool)
+        if tool_name == "Write":
+            content = tool_input.get("content", "")
+
+            # Only check Python files in generated/
+            if file_path.endswith(".py") and "generated/" in file_path:
+                for pattern, message in DANGEROUS_PATTERNS:
+                    if re.search(pattern, content, re.IGNORECASE):
+                        print(f"BLOCKED: {message}", file=sys.stderr)
+                        print(f"Found in: {file_path}", file=sys.stderr)
+                        sys.exit(2)  # BLOCK
+
+        # Check new content for dangerous patterns (Edit tool)
+        if tool_name == "Edit":
+            new_content = tool_input.get("new_string", "")
+            if file_path.endswith(".py") and "generated/" in file_path:
+                for pattern, message in DANGEROUS_PATTERNS:
+                    if re.search(pattern, new_content, re.IGNORECASE):
+                        print(f"BLOCKED: {message}", file=sys.stderr)
+                        sys.exit(2)
+
+        # All checks passed
+        sys.exit(0)
+
+    except json.JSONDecodeError:
+        sys.exit(0)  # Don't block on JSON errors
+    except Exception as e:
+        print(f"Hook error: {e}", file=sys.stderr)
+        sys.exit(0)  # Fail open
 
 
-class TestSecurityHook:
-    """Tests for security check hook."""
-
-    def test_blocks_eval(self):
-        """eval() should be blocked."""
-        code = '''
-@click.command()
-def run(code):
-    eval(code)  # Dangerous!
-'''
-        issues = check_code_security(code, "test.py")
-        assert len(issues) > 0
-        assert any(i.pattern == "eval() function" for i in issues)
-
-    def test_blocks_shell_true(self):
-        """subprocess with shell=True should be blocked."""
-        code = '''
-import subprocess
-subprocess.call(cmd, shell=True)
-'''
-        issues = check_code_security(code, "test.py")
-        assert len(issues) > 0
-        assert any("shell" in i.pattern.lower() for i in issues)
-
-    def test_allows_safe_subprocess(self):
-        """subprocess with shell=False should be allowed."""
-        code = '''
-import subprocess
-subprocess.call(["ls", "-la"], shell=False)
-'''
-        issues = check_code_security(code, "test.py")
-        blocked = [i for i in issues if i.severity == "blocked"]
-        assert len(blocked) == 0
+if __name__ == "__main__":
+    main()
 ```
+
+#### Hook 2: PostToolUse - Syntax Validation
+
+Create `.claude/hooks/post_tool_use.py`:
+
+```python
+#!/usr/bin/env python3
+"""
+PostToolUse Hook: Runs AFTER Claude writes files.
+Validates Python syntax in generated code.
+
+Note: PostToolUse cannot block (operation already happened).
+Use stdout to provide feedback to Claude.
+"""
+import ast
+import json
+import sys
+from pathlib import Path
+
+
+def main():
+    try:
+        input_data = json.load(sys.stdin)
+
+        tool_name = input_data.get("tool_name", "")
+        tool_input = input_data.get("tool_input", {})
+
+        if tool_name != "Write":
+            sys.exit(0)
+
+        file_path = tool_input.get("file_path", "")
+
+        # Only validate Python files in generated/
+        if not file_path.endswith(".py") or "generated/" not in file_path:
+            sys.exit(0)
+
+        # Read and validate the file
+        path = Path(file_path)
+        if not path.exists():
+            sys.exit(0)
+
+        code = path.read_text()
+
+        try:
+            ast.parse(code)
+            # Print to stdout - shown to Claude as context
+            print(f"Syntax OK: {file_path}")
+        except SyntaxError as e:
+            # Print warning - Claude will see this
+            print(f"WARNING: Syntax error in {file_path}")
+            print(f"  Line {e.lineno}: {e.msg}")
+            print("Please fix the syntax error.")
+
+        sys.exit(0)
+
+    except Exception as e:
+        print(f"Hook error: {e}", file=sys.stderr)
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+#### Hook 3: Stop - Test Reminder
+
+Create `.claude/hooks/stop.py`:
+
+```python
+#!/usr/bin/env python3
+"""
+Stop Hook: Runs when Claude finishes responding.
+Reminds to run tests after code generation.
+"""
+import json
+import sys
+from pathlib import Path
+
+
+def main():
+    try:
+        input_data = json.load(sys.stdin)
+
+        # Check if any generated Python files exist
+        generated_dir = Path("generated")
+        if generated_dir.exists():
+            py_files = list(generated_dir.rglob("*.py"))
+            if py_files:
+                print("Reminder: Run tests with 'uv run pytest' or /test")
+
+        sys.exit(0)
+
+    except Exception:
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+### Step 3: Verify Your Hooks Work
+
+Test each hook to ensure it's working correctly:
+
+#### Test 1: PreToolUse Blocking
+
+Ask Claude to write code with eval():
+
+```
+Write a file generated/test/cli.py that uses eval() to execute user input
+```
+
+**Expected:** Hook blocks with "BLOCKED: eval() is forbidden"
+
+#### Test 2: PreToolUse Allowing
+
+Ask Claude to write safe code:
+
+```
+Write a simple hello world CLI in generated/hello/cli.py using Click
+```
+
+**Expected:** Hook allows, file is created
+
+#### Test 3: PostToolUse Feedback
+
+Check that syntax validation runs after writes - you should see "Syntax OK" messages.
+
+#### Test 4: Path Protection
+
+Try to write to a forbidden path:
+
+```
+Write my API key to .env.local
+```
+
+**Expected:** Hook blocks with "BLOCKED: Cannot write to '.env.local'"
+
+---
+
+### Testing Hooks via Command Line
+
+You can test hooks directly without Claude Code:
+
+```bash
+# Test PreToolUse with a dangerous pattern
+echo '{"tool_name": "Write", "tool_input": {"file_path": "generated/test/cli.py", "content": "eval(user_input)"}}' | python .claude/hooks/pre_tool_use.py
+echo "Exit code: $?"
+# Expected: Exit code 2 (blocked)
+
+# Test PreToolUse with safe content
+echo '{"tool_name": "Write", "tool_input": {"file_path": "generated/test/cli.py", "content": "print(hello)"}}' | python .claude/hooks/pre_tool_use.py
+echo "Exit code: $?"
+# Expected: Exit code 0 (allowed)
+
+# Test forbidden path
+echo '{"tool_name": "Write", "tool_input": {"file_path": ".env.local", "content": "SECRET=xyz"}}' | python .claude/hooks/pre_tool_use.py
+echo "Exit code: $?"
+# Expected: Exit code 2 (blocked)
+```
+
+---
+
+### What Claude Sees When Blocked
+
+When a hook exits with code 2, Claude receives the stderr output and adjusts:
+
+```
+Hook blocked operation:
+BLOCKED: eval() is forbidden
+Found in: generated/test/cli.py
+
+Claude's response:
+"I'll rewrite this without eval() - let me use a safer approach..."
+```
+
+---
+
+### Advanced: JSON Response Format
+
+Beyond simple exit codes, hooks can return structured JSON for sophisticated control.
+
+#### Common JSON Fields (All Hook Types)
+
+```json
+{
+  "continue": true,           // Whether Claude should continue (default: true)
+  "stopReason": "string",     // Message when continue=false (shown to user)
+  "suppressOutput": true      // Hide stdout from transcript (default: false)
+}
+```
+
+#### Hook-Specific Decision Control
+
+| Hook Type | Decision Values | Effect |
+|-----------|-----------------|--------|
+| PreToolUse | `"approve"`, `"block"` | approve = bypass permissions, block = prevent execution |
+| PostToolUse | `"block"` | block = prompts Claude with reason |
+| Stop | `"block"` | block = prevents Claude from stopping |
+
+#### Example: PreToolUse with JSON Decision
+
+```python
+#!/usr/bin/env python3
+import json
+import sys
+
+input_data = json.load(sys.stdin)
+tool_name = input_data.get("tool_name", "")
+
+# Approve: Bypasses permission system entirely
+if tool_name == "Read" and "docs/" in input_data.get("tool_input", {}).get("file_path", ""):
+    output = {
+        "decision": "approve",
+        "reason": "Documentation files are always readable"
+    }
+    print(json.dumps(output))
+    sys.exit(0)
+
+# Block: Prevents tool execution, reason shown to Claude
+if "eval(" in str(input_data.get("tool_input", {})):
+    output = {
+        "decision": "block",
+        "reason": "eval() is not allowed. Use a safer alternative."
+    }
+    print(json.dumps(output))
+    sys.exit(0)
+
+sys.exit(0)  # Normal permission flow
+```
+
+#### Example: Stop Hook Ensuring Tests Pass
+
+```python
+#!/usr/bin/env python3
+import json
+import subprocess
+import sys
+
+input_data = json.load(sys.stdin)
+
+# Check if this is already a stop hook retry (prevent infinite loops)
+if input_data.get("stop_hook_active"):
+    sys.exit(0)
+
+# Run tests
+result = subprocess.run(["uv", "run", "pytest", "-q"], capture_output=True)
+
+if result.returncode != 0:
+    output = {
+        "decision": "block",
+        "reason": "Tests are failing. Please fix failing tests before completing."
+    }
+    print(json.dumps(output))
+    sys.exit(0)
+
+sys.exit(0)
+```
+
+#### Flow Control Priority
+
+1. `"continue": false` - Takes precedence over all
+2. `"decision": "block"` - Hook-specific blocking
+3. `exit(2)` - Simple blocking via stderr
+4. Other exit codes - Non-blocking errors
+
+---
+
+### UserPromptSubmit Hook Deep Dive
+
+The UserPromptSubmit hook fires when you submit a prompt, **before Claude sees it**. Use it to:
+
+- **Log prompts** - Audit trail for compliance
+- **Block prompts** - Prevent dangerous requests
+- **Add context** - Inject project info Claude will see
+
+#### Example: Context Injection + Logging
+
+```python
+#!/usr/bin/env python3
+"""
+UserPromptSubmit Hook: Adds context and logs prompts.
+"""
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+
+def main():
+    input_data = json.load(sys.stdin)
+    prompt = input_data.get("prompt", "")
+    session_id = input_data.get("session_id", "unknown")
+
+    # Log the prompt
+    log_file = Path("logs/prompts.jsonl")
+    log_file.parent.mkdir(exist_ok=True)
+    with open(log_file, "a") as f:
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "session_id": session_id,
+            "prompt": prompt[:200]  # Truncate for logs
+        }
+        f.write(json.dumps(log_entry) + "\n")
+
+    # Add context that Claude will see with the prompt
+    print("Project: CLI Generator")
+    print("Standards: Follow Click conventions, type hints required")
+    print("---")
+
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
+```
+
+#### Configuration for UserPromptSubmit
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "uv run python .claude/hooks/user_prompt_submit.py" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Hook Execution Environment
+
+| Property | Value |
+|----------|-------|
+| Timeout | 60 seconds per hook |
+| Parallelization | All matching hooks run in parallel |
+| Working Directory | Current project directory |
+| Environment | Inherits Claude Code's env vars |
+
+---
+
+### Best Practices
+
+- **UserPromptSubmit** - Early intervention: validate and enhance prompts before processing
+- **PreToolUse** - Prevention: block dangerous operations before they execute
+- **PostToolUse** - Validation: check results and provide feedback to Claude
+- **Stop** - Completion: ensure tasks are properly finished (check tests, etc.)
+- **Avoid infinite loops** - Check `stop_hook_active` flag in Stop hooks
+- **Fail open** - Use `sys.exit(0)` in exception handlers to avoid blocking on errors
+- **Clear messages** - Always provide helpful error messages in stderr
+
+> **Pro tip:** Start simple with exit codes and stderr. Add JSON responses only when you need fine-grained control like approving specific operations or preventing Claude from stopping.
 
 ---
 
 ### ✅ Day 5 Checklist
 
-- [ ] Four hooks implemented
-- [ ] Spec validation catches duplicate commands/options
-- [ ] Code validation catches syntax errors
-- [ ] Security check blocks dangerous patterns
-- [ ] Coverage check warns on low coverage
-- [ ] Hooks integrated into generation pipeline
-- [ ] Tests for all hooks passing
+- [ ] Hooks configured in `.claude/settings.json`
+- [ ] PreToolUse hook blocks eval(), exec(), shell=True
+- [ ] PreToolUse hook blocks .env file writes
+- [ ] PostToolUse hook validates Python syntax
+- [ ] Stop hook shows test reminder
+- [ ] Tested hooks via command line
+- [ ] Verified hooks work in Claude Code
 
 ---
 

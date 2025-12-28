@@ -3685,27 +3685,48 @@ flowchart TD
             <!-- Day 5 -->
             <section id="day-5" class="day-section week-1" x-intersect:enter="currentSection = 'day-5'">
                 <div class="flex items-center justify-between mb-4">
-                    <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-medium rounded-full">Day 5 of 5</span>
-                    <button @click="toggleBookmark('day-5', 'Day 5: Quality Hooks')" :class="isBookmarked('day-5') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                    <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-medium rounded-full">Day 5 of 14</span>
+                    <button @click="toggleBookmark('day-5', 'Day 5: Claude Code Hooks')" :class="isBookmarked('day-5') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
                         <svg class="w-6 h-6" :fill="isBookmarked('day-5') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                     </button>
                 </div>
-                <h2 class="text-3xl font-bold mb-2">Day 5: Quality Hooks</h2>
+                <h2 class="text-3xl font-bold mb-2">Day 5: Claude Code Hooks</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 5 of 14 • Week 1: Foundation</p>
 
                 <h3 class="text-xl font-semibold mb-3">Learning Objectives</h3>
                 <ul class="list-disc list-inside mb-6 space-y-1">
-                    <li>Automate quality checks</li>
-                    <li>Understand hook lifecycle</li>
-                    <li>Prevent common errors automatically</li>
+                    <li>Understand Claude Code's hook system</li>
+                    <li>Configure hooks in <code>settings.json</code></li>
+                    <li>Write hook scripts that receive JSON and use exit codes</li>
+                    <li>Block dangerous operations automatically</li>
+                    <li>Use JSON responses for advanced control (modify inputs, suppress output)</li>
                 </ul>
 
-                <h3 class="text-xl font-semibold mb-3">What Are Hooks?</h3>
-                <p class="mb-4">Hooks run automatically at specific points without explicit invocation:</p>
+                <!-- What Are Real Hooks -->
+                <h3 class="text-xl font-semibold mb-3">What Are Claude Code Hooks?</h3>
+                <p class="mb-4">Hooks are <strong>shell commands that Claude Code runs automatically</strong> at specific lifecycle points. They're configured in <code>.claude/settings.json</code> and can:</p>
                 <ul class="list-disc list-inside mb-4 space-y-1">
-                    <li><strong>Pre-hooks:</strong> Run before an action (can block)</li>
-                    <li><strong>Post-hooks:</strong> Run after an action (can alert)</li>
+                    <li><strong>Block operations</strong> by exiting with code 2</li>
+                    <li><strong>Inject context</strong> by printing to stdout</li>
+                    <li><strong>Log/monitor</strong> without affecting execution</li>
                 </ul>
+
+                <!-- Key Concept Box -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-8">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Key Concept: Hooks Are Automatic
+                    </h4>
+                    <p class="mb-3">Unlike slash commands (which you invoke) or skills (which Claude decides to use), <strong>hooks run automatically</strong> when their trigger event occurs.</p>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 font-mono text-sm">
+                        <div class="text-gray-500 dark:text-gray-400"># You don't call hooks - they intercept Claude's actions</div>
+                        <div class="mt-2">Claude tries to write file → <span class="text-amber-600">PreToolUse hook runs</span> → Hook decides allow/block</div>
+                    </div>
+                </div>
+
+                <!-- Hook Lifecycle Diagram -->
                 <div class="mermaid-container mermaid-walkthrough" id="hook-lifecycle-diagram" data-walkthrough="hook-lifecycle">
                     <div class="mermaid-container-title">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
@@ -3733,12 +3754,13 @@ flowchart TD
                     </div>
                     <div class="mermaid hover-mode" id="hook-lifecycle-mermaid">
 flowchart LR
-    A[User Action] --> B{Pre-Hook}
-    B -->|Pass| C[Execute Action]
-    B -->|Fail| D[Block + Show Error]
-    C --> E{Post-Hook}
-    E -->|Pass| F[Report Success]
-    E -->|Warn| G[Report with Warnings]
+    A[Claude Tool Call] --> B[PreToolUse Hook]
+    B -->|Exit 0| C[Execute Tool]
+    B -->|Exit 2| D[BLOCKED]
+    C --> E[PostToolUse Hook]
+    E --> F[Continue]
+    D --> G[Error to Claude]
+    G --> H[Claude Adjusts]
     style A fill:#e0f2fe,stroke:#0284c7
     style B fill:#fef3c7,stroke:#d97706
     style C fill:#dcfce7,stroke:#16a34a
@@ -3746,487 +3768,719 @@ flowchart LR
     style E fill:#fef3c7,stroke:#d97706
     style F fill:#dcfce7,stroke:#16a34a
     style G fill:#fef3c7,stroke:#d97706
+    style H fill:#e0f2fe,stroke:#0284c7
                     </div>
                 </div>
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Hook 1: Spec Validation</h3>
-                <p class="mb-2"><strong>Trigger:</strong> Before any code generation.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/hooks/validate_spec.md</code></p>
+                <!-- 9 Hook Types -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">The 9 Hook Types</h3>
+                <p class="mb-4">Claude Code provides nine distinct hooks that fire at different lifecycle stages:</p>
 
-                <pre><code class="language-markdown"># Spec Validation Hook
+                <div class="overflow-x-auto mb-6">
+                    <table class="w-full text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-800">
+                                <th class="text-left py-2 px-3 border-b dark:border-gray-700">Hook</th>
+                                <th class="text-left py-2 px-3 border-b dark:border-gray-700">When It Fires</th>
+                                <th class="text-left py-2 px-3 border-b dark:border-gray-700">Can Block?</th>
+                                <th class="text-left py-2 px-3 border-b dark:border-gray-700">Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b dark:border-gray-700">
+                                <td class="py-2 px-3 font-mono text-primary">PreToolUse</td>
+                                <td class="py-2 px-3">Before tool execution</td>
+                                <td class="py-2 px-3"><span class="text-green-600">Yes</span></td>
+                                <td class="py-2 px-3">Block dangerous writes, validate inputs</td>
+                            </tr>
+                            <tr class="border-b dark:border-gray-700">
+                                <td class="py-2 px-3 font-mono text-primary">PostToolUse</td>
+                                <td class="py-2 px-3">After tool completes</td>
+                                <td class="py-2 px-3"><span class="text-gray-500">No</span></td>
+                                <td class="py-2 px-3">Validate output, run linters</td>
+                            </tr>
+                            <tr class="border-b dark:border-gray-700">
+                                <td class="py-2 px-3 font-mono text-primary">UserPromptSubmit</td>
+                                <td class="py-2 px-3">When user sends message</td>
+                                <td class="py-2 px-3"><span class="text-green-600">Yes</span></td>
+                                <td class="py-2 px-3">Inject context, validate prompts</td>
+                            </tr>
+                            <tr class="border-b dark:border-gray-700">
+                                <td class="py-2 px-3 font-mono text-primary">Stop</td>
+                                <td class="py-2 px-3">When Claude finishes responding</td>
+                                <td class="py-2 px-3"><span class="text-green-600">Yes</span></td>
+                                <td class="py-2 px-3">Run tests, verify completion</td>
+                            </tr>
+                            <tr class="border-b dark:border-gray-700">
+                                <td class="py-2 px-3 font-mono text-primary">SubagentStop</td>
+                                <td class="py-2 px-3">When a subagent completes</td>
+                                <td class="py-2 px-3"><span class="text-green-600">Yes</span></td>
+                                <td class="py-2 px-3">Validate subagent output</td>
+                            </tr>
+                            <tr class="border-b dark:border-gray-700">
+                                <td class="py-2 px-3 font-mono text-primary">Notification</td>
+                                <td class="py-2 px-3">On notifications</td>
+                                <td class="py-2 px-3"><span class="text-gray-500">No</span></td>
+                                <td class="py-2 px-3">Custom notification handling</td>
+                            </tr>
+                            <tr class="border-b dark:border-gray-700">
+                                <td class="py-2 px-3 font-mono text-primary">PreCompact</td>
+                                <td class="py-2 px-3">Before context compaction</td>
+                                <td class="py-2 px-3"><span class="text-gray-500">No</span></td>
+                                <td class="py-2 px-3">Save important context</td>
+                            </tr>
+                            <tr class="border-b dark:border-gray-700">
+                                <td class="py-2 px-3 font-mono text-primary">SessionStart</td>
+                                <td class="py-2 px-3">When session begins</td>
+                                <td class="py-2 px-3"><span class="text-gray-500">No</span></td>
+                                <td class="py-2 px-3">Load project context</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-primary">SessionEnd</td>
+                                <td class="py-2 px-3">When session terminates</td>
+                                <td class="py-2 px-3"><span class="text-gray-500">No</span></td>
+                                <td class="py-2 px-3">Cleanup, save logs</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-## Trigger
-Before: Code generation from CLISpec
-After: Spec is parsed and loaded
+                <!-- Exit Code Box -->
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 mb-8">
+                    <h4 class="text-lg font-semibold mb-3">Exit Codes Control Flow</h4>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border-l-4 border-green-500">
+                            <div class="font-mono text-lg text-green-600 mb-1">exit(0)</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Success - allow operation</div>
+                            <div class="text-xs text-gray-500 mt-1">stdout shown to user</div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border-l-4 border-red-500">
+                            <div class="font-mono text-lg text-red-600 mb-1">exit(2)</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Block - stop operation</div>
+                            <div class="text-xs text-gray-500 mt-1">stderr fed back to Claude</div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border-l-4 border-gray-400">
+                            <div class="font-mono text-lg text-gray-600 mb-1">exit(1)</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Error - non-blocking</div>
+                            <div class="text-xs text-gray-500 mt-1">stderr shown to user only</div>
+                        </div>
+                    </div>
+                </div>
 
-## Purpose
-Prevent generation of invalid or problematic CLI designs.
+                <!-- Step 1: Configure Hooks in settings.json -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">Step 1: Configure Hooks in settings.json</h3>
+                <p class="mb-4">Hook configuration lives in <code>.claude/settings.json</code>. Add a <code>hooks</code> section:</p>
 
-## Validation Rules
+                <pre><code class="language-json">{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Write|Edit", "hooks": [
+        { "type": "command", "command": "uv run python .claude/hooks/pre_tool_use.py" }
+      ]}
+    ],
+    "PostToolUse": [
+      { "matcher": "Write", "hooks": [
+        { "type": "command", "command": "uv run python .claude/hooks/post_tool_use.py" }
+      ]}
+    ],
+    "Stop": [
+      { "matcher": "", "hooks": [
+        { "type": "command", "command": "uv run python .claude/hooks/stop.py" }
+      ]}
+    ],
+    "UserPromptSubmit": [
+      { "matcher": "", "hooks": [
+        { "type": "command", "command": "uv run python .claude/hooks/user_prompt_submit.py" }
+      ]}
+    ],
+    "SessionStart": [
+      { "matcher": "", "hooks": [
+        { "type": "command", "command": "uv run python .claude/hooks/session_start.py" }
+      ]}
+    ],
+    "PreCompact": [
+      { "matcher": "", "hooks": [
+        { "type": "command", "command": "uv run python .claude/hooks/pre_compact.py" }
+      ]}
+    ],
+    "SessionEnd": [
+      { "matcher": "", "hooks": [
+        { "type": "command", "command": "uv run python .claude/hooks/session_end.py" }
+      ]}
+    ]
+  }
+}</code></pre>
 
-### Structural Validation
-1. CLI name is valid Python package name
-2. No duplicate command names
-3. No duplicate option names within command
-4. No duplicate short options within command
-5. Required arguments come before optional ones
-6. Choice options have choices defined
+                <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 my-4">
+                    <p class="text-sm"><strong>Format:</strong> <code>matcher</code> is a regex matching tool names (<code>"Write|Edit"</code> matches both). Empty <code>""</code> matches all.</p>
+                </div>
 
-### Semantic Validation
-1. CLI has at least one command (or is single-command)
-2. Each command has a description
-3. Options with defaults are not marked required
-4. Short options are single characters
-5. No reserved option names (--help, --version handled by Click)
+                <!-- Step 2: Create Hook Scripts -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">Step 2: Create Hook Scripts</h3>
+                <p class="mb-4">Hook scripts receive JSON via stdin and communicate via exit codes. Here's the pattern:</p>
 
-### Security Validation
-1. No suspicious patterns in names (eval, exec, rm -rf, etc.)
-2. No shell injection risks in examples
-3. No hardcoded paths to system directories
+                <h4 class="text-lg font-semibold mt-6 mb-3">Hook 1: PreToolUse - Security Validation</h4>
+                <p class="mb-2">Create <code>.claude/hooks/pre_tool_use.py</code>:</p>
 
-## On Validation Failure
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""
+PreToolUse Hook: Runs BEFORE Claude writes/edits files.
+Blocks dangerous patterns in generated code.
 
-⚠️ Spec Validation Failed
+Communication options:
+  - Simple: exit(0) allow, exit(2) block (stderr sent to Claude)
+  - Advanced: Print JSON with {"decision": "block", "reason": "..."}
+"""
+import json
+import re
+import sys
 
-Errors (must fix):
-✗ Duplicate command name: 'list' appears twice
-✗ Option 'verbose' has both -v short and --quiet has -v short
+DANGEROUS_PATTERNS = [
+    (r"\beval\s*\(", "eval() is forbidden"),
+    (r"\bexec\s*\(", "exec() is forbidden"),
+    (r"shell\s*=\s*True", "shell=True is forbidden"),
+]
+FORBIDDEN_PATHS = [".env", "credentials", "secrets"]
 
-Warnings (should fix):
-⚡ Command 'delete' has no confirmation flag
-⚡ No examples provided for 'export' command
 
-Validation blocked code generation.
-Run /refine to fix issues, then /generate again.</code></pre>
+def block(reason: str, use_json: bool = False):
+    """Block operation - either via exit code or JSON response."""
+    if use_json:
+        print(json.dumps({"decision": "block", "reason": reason}))
+        sys.exit(0)
+    else:
+        print(f"BLOCKED: {reason}", file=sys.stderr)
+        sys.exit(2)
 
-                <h4 class="text-lg font-semibold mt-6 mb-3">Implementation</h4>
-                <pre><code class="language-python"># src/cli_generator/validators/spec_validator.py
 
-from ..models import CLISpec
+def main():
+    try:
+        input_data = json.load(sys.stdin)
+        tool_name = input_data.get("tool_name", "")
+        tool_input = input_data.get("tool_input", {})
 
-class SpecValidationError(Exception):
-    def __init__(self, errors: list[str], warnings: list[str]):
-        self.errors = errors
-        self.warnings = warnings
+        if tool_name not in ["Write", "Edit"]:
+            sys.exit(0)
 
-def validate_spec(spec: CLISpec) -> tuple[list[str], list[str]]:
-    """Validate a CLISpec. Returns (errors, warnings)."""
-    errors = []
-    warnings = []
+        file_path = tool_input.get("file_path", "")
 
-    # Check for duplicate commands
-    cmd_names = [cmd.name for cmd in spec.commands]
-    if len(cmd_names) != len(set(cmd_names)):
-        duplicates = [n for n in cmd_names if cmd_names.count(n) > 1]
-        errors.append(f"Duplicate command names: {set(duplicates)}")
+        # Check forbidden paths
+        for forbidden in FORBIDDEN_PATHS:
+            if forbidden in file_path.lower():
+                block(f"Cannot write to '{file_path}'")
 
-    # Check each command
-    for cmd in spec.commands:
-        # Check for duplicate options
-        opt_names = [opt.name for opt in cmd.options]
-        if len(opt_names) != len(set(opt_names)):
-            errors.append(f"Duplicate options in '{cmd.name}'")
+        # Check Python files in generated/ for dangerous patterns
+        content = tool_input.get("content", "") or tool_input.get("new_string", "")
+        if file_path.endswith(".py") and "generated/" in file_path:
+            for pattern, message in DANGEROUS_PATTERNS:
+                if re.search(pattern, content, re.IGNORECASE):
+                    block(message)
 
-        # Check short options
-        shorts = [opt.short for opt in cmd.options if opt.short]
-        if len(shorts) != len(set(shorts)):
-            errors.append(f"Duplicate short options in '{cmd.name}'")
+        sys.exit(0)  # All checks passed
 
-        # Warnings
-        if not cmd.examples:
-            warnings.append(f"No examples for '{cmd.name}'")
+    except Exception:
+        sys.exit(0)  # Fail open
 
-        if cmd.name in ['delete', 'remove', 'rm', 'clean']:
-            has_confirm = any(
-                opt.name in ['confirm', 'force', 'yes']
-                for opt in cmd.options
-            )
-            if not has_confirm:
-                warnings.append(f"'{cmd.name}' has no confirmation flag")
 
-    return errors, warnings</code></pre>
+if __name__ == "__main__":
+    main()</code></pre>
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Hook 2: Code Syntax Validation</h3>
-                <p class="mb-2"><strong>Trigger:</strong> After code is generated, before reporting success.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/hooks/validate_code.md</code></p>
+                <h4 class="text-lg font-semibold mt-6 mb-3">Hook 2: PostToolUse - Syntax Validation</h4>
+                <p class="mb-2">Create <code>.claude/hooks/post_tool_use.py</code>:</p>
 
-                <pre><code class="language-markdown"># Code Syntax Validation Hook
-
-## Trigger
-After: Python files are generated
-Before: Success message shown to user
-
-## Purpose
-Ensure generated code is syntactically valid Python.
-
-## Validation Steps
-
-### 1. Syntax Check
-Compile each .py file without executing:
-```python
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""
+PostToolUse Hook: Runs AFTER Claude writes files.
+Validates Python syntax - stdout feedback helps Claude self-correct.
+"""
 import ast
-ast.parse(code)
-```
-
-### 2. Import Check
-Verify imports resolve:
-```python
-import importlib.util
-spec = importlib.util.spec_from_file_location(name, path)
-# Doesn't execute, just checks imports
-```
-
-### 3. Click Decorator Check
-Verify Click decorators are valid:
-- @click.command() on functions
-- @click.option() has required parameters
-- @click.argument() before @click.option()
-
-## On Validation Failure
-
-⚠️ Generated Code Validation Failed
-====================================
-
-Syntax Error in cli.py:
-  Line 45: SyntaxError: unexpected EOF while parsing
-
-  Context:
-    43 | @click.option("--output")
-    44 | def convert(input_file, output
-    45 |     # Missing closing parenthesis
-        ^
-
-Files kept for debugging: ./generated/broken-cli/
-
-Fix manually or regenerate with:
-  /generate --regenerate</code></pre>
-
-                <h4 class="text-lg font-semibold mt-6 mb-3">Implementation</h4>
-                <pre><code class="language-python"># src/cli_generator/validators/code_validator.py
-
-import ast
+import json
+import sys
 from pathlib import Path
 
-class CodeValidationError(Exception):
-    def __init__(self, file: str, line: int, message: str):
-        self.file = file
-        self.line = line
-        self.message = message
 
-def validate_python_file(path: Path) -> list[CodeValidationError]:
-    """Validate a Python file. Returns list of errors."""
-    errors = []
-    code = path.read_text()
-
+def main():
     try:
-        ast.parse(code)
-    except SyntaxError as e:
-        errors.append(CodeValidationError(
-            file=str(path),
-            line=e.lineno or 0,
-            message=str(e)
-        ))
-
-    return errors
-
-def validate_generated_cli(cli_path: Path) -> list[CodeValidationError]:
-    """Validate all Python files in generated CLI."""
-    errors = []
-
-    for py_file in cli_path.rglob("*.py"):
-        errors.extend(validate_python_file(py_file))
+        input_data = json.load(sys.stdin)
+        tool_input = input_data.get("tool_input", {})
+        file_path = tool_input.get("file_path", "")
 
-    return errors</code></pre>
+        # Only validate Python files in generated/
+        if not file_path.endswith(".py") or "generated/" not in file_path:
+            sys.exit(0)
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Hook 3: Dangerous Pattern Detection</h3>
-                <p class="mb-2"><strong>Trigger:</strong> During spec generation and code generation.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/hooks/security_check.md</code></p>
+        path = Path(file_path)
+        if not path.exists():
+            sys.exit(0)
 
-                <pre><code class="language-markdown"># Security Check Hook
+        try:
+            ast.parse(path.read_text())
+            print(f"Syntax OK: {file_path}")
+        except SyntaxError as e:
+            print(f"WARNING: Syntax error in {file_path} line {e.lineno}: {e.msg}")
 
-## Trigger
-- During: Spec generation from natural language
-- During: Code generation from spec
-- During: Implementation of commands
+        sys.exit(0)
 
-## Purpose
-Prevent generation of potentially dangerous code.
+    except Exception:
+        sys.exit(0)
 
-## Blocked Patterns
 
-### In Specifications
-- Command names: `rm`, `delete_all`, `sudo`, `root`
-- Option names: `password`, `secret`, `token` (without being marked sensitive)
-- Examples containing: `rm -rf`, `sudo`, `| sh`, `eval`
+if __name__ == "__main__":
+    main()</code></pre>
 
-### In Generated Code
-- Functions: `eval()`, `exec()`, `compile()`
-- Modules: `subprocess.shell=True`, `os.system()`
-- Patterns: `__import__`, `globals()`, `locals()`
+                <h4 class="text-lg font-semibold mt-6 mb-3">Hook 3: Stop - Test Reminder</h4>
+                <p class="mb-2">Create <code>.claude/hooks/stop.py</code>:</p>
 
-### In Paths
-- System directories: `/etc`, `/usr`, `/bin`, `C:\Windows`
-- Home expansion without validation: `~/.ssh`, `~/.aws`
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""
+Stop Hook: Runs when Claude finishes responding.
+Can block Claude from stopping (forces continuation).
+"""
+import json
+import sys
+from pathlib import Path
 
-## On Detection
 
-🛑 Security Check Failed
+def main():
+    try:
+        input_data = json.load(sys.stdin)
 
-Blocked pattern detected:
+        # Check for generated Python files
+        generated = Path("generated")
+        if generated.exists() and list(generated.rglob("*.py")):
+            print("Reminder: Run tests with 'uv run pytest' or /test")
 
-Location: Command 'execute' implementation
-Pattern: subprocess.call(..., shell=True)
-Risk: Shell injection vulnerability
+        sys.exit(0)
 
-Suggestion: Use subprocess.call([...], shell=False) with list args
+    except Exception:
+        sys.exit(0)
 
-Generation blocked. Review and fix security issue.
 
-To bypass (not recommended):
-  /generate --allow-unsafe
+if __name__ == "__main__":
+    main()</code></pre>
 
-## Allowed Exceptions
-Some patterns are okay in context:
-- `os.remove()` for file deletion commands (with confirmation)
-- Path expansion when validated
-- subprocess with shell=False</code></pre>
+                <h4 class="text-lg font-semibold mt-6 mb-3">Hook 4: UserPromptSubmit - Context Injection</h4>
+                <p class="mb-2">Create <code>.claude/hooks/user_prompt_submit.py</code>:</p>
 
-                <h4 class="text-lg font-semibold mt-6 mb-3">Implementation</h4>
-                <pre><code class="language-python"># src/cli_generator/validators/security_validator.py
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""
+UserPromptSubmit Hook: Runs when user submits a prompt.
+Injects project context that Claude will see.
+"""
+import json
+import sys
 
-import re
-from dataclasses import dataclass
 
-@dataclass
-class SecurityIssue:
-    severity: str  # "blocked" or "warning"
-    location: str
-    pattern: str
-    risk: str
-    suggestion: str
+def main():
+    try:
+        input_data = json.load(sys.stdin)
 
-BLOCKED_PATTERNS = [
-    (r'\beval\s*\(', 'eval() function', 'Code injection'),
-    (r'\bexec\s*\(', 'exec() function', 'Code injection'),
-    (r'shell\s*=\s*True', 'shell=True', 'Shell injection'),
-    (r'\bos\.system\s*\(', 'os.system()', 'Shell injection'),
-    (r'rm\s+-rf\s+/', 'rm -rf /', 'System destruction'),
-]
+        # Add context Claude will see with every prompt
+        print("Project: CLI Generator")
+        print("Standards: Follow Click conventions, type hints required")
+        print("---")
 
-def check_code_security(code: str, location: str) -> list[SecurityIssue]:
-    """Check code for security issues."""
-    issues = []
-
-    for pattern, name, risk in BLOCKED_PATTERNS:
-        if re.search(pattern, code):
-            issues.append(SecurityIssue(
-                severity="blocked",
-                location=location,
-                pattern=name,
-                risk=risk,
-                suggestion=f"Remove or replace {name}"
-            ))
-
-    return issues</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Hook 4: Test Coverage Check</h3>
-                <p class="mb-2"><strong>Trigger:</strong> After tests are generated or run.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/hooks/coverage_check.md</code></p>
-
-                <pre><code class="language-markdown"># Test Coverage Check Hook
-
-## Trigger
-After: Tests are run with /test
-After: Tests are generated with /generate --with-tests
-
-## Purpose
-Ensure generated CLIs have adequate test coverage.
-
-## Coverage Requirements
-
-### Minimum Coverage
-- Overall: 80%
-- Each command: At least one test
-- Error paths: At least one test per error type
-
-### Required Test Types
-For each command:
-- [ ] Happy path (normal usage)
-- [ ] Help text (--help works)
-- [ ] Invalid input (proper error)
-- [ ] Missing required args (proper error)
-
-### Global Tests
-- [ ] CLI --help
-- [ ] CLI --version
-- [ ] Unknown command error
-
-## On Check Failure
-
-⚠️ Coverage Check Warning
-
-Coverage: 65% (minimum: 80%)
-
-Missing tests:
-  Commands without happy path test:
-    - 'export' command
-
-  Commands without error test:
-    - 'compress' command
-    - 'resize' command
-
-  Untested error handlers:
-    - cli.py:89-94 (FileNotFoundError)
-    - cli.py:112-115 (PermissionError)
-
-Generate missing tests?
-  /test --generate-missing</code></pre>
-
-                <h4 class="text-lg font-semibold mt-6 mb-3">Implementation</h4>
-                <pre><code class="language-python"># src/cli_generator/validators/coverage_validator.py
-
-from dataclasses import dataclass
-
-@dataclass
-class CoverageReport:
-    overall_percent: float
-    commands_tested: dict[str, bool]
-    missing_tests: list[str]
-    untested_lines: list[tuple[str, int, int]]
-
-def check_test_coverage(
-    cli_path: str,
-    coverage_data: dict
-) -> CoverageReport:
-    """Analyze test coverage for a generated CLI."""
-    # Parse coverage.py output
-    # Identify gaps
-    # Return structured report
-    pass</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Integrating Hooks</h3>
-                <p class="mb-4">Hooks are called from your generators. Update <code>code_generator.py</code>:</p>
-                <pre><code class="language-python"># src/cli_generator/generators/code_generator.py
-
-from ..validators.spec_validator import validate_spec, SpecValidationError
-from ..validators.code_validator import validate_generated_cli
-from ..validators.security_validator import check_code_security
-
-class CodeGenerator:
-    def generate(self, spec: CLISpec, output_dir: Path) -> dict[str, Path]:
-        # Pre-generation hooks
-        errors, warnings = validate_spec(spec)
-        if errors:
-            raise SpecValidationError(errors, warnings)
-
-        if warnings:
-            console.print(f"[yellow]Warnings: {warnings}[/yellow]")
-
-        # Generate code
-        files = self._generate_files(spec, output_dir)
-
-        # Post-generation hooks
-        code_errors = validate_generated_cli(output_dir / spec.name)
-        if code_errors:
-            raise CodeValidationError(code_errors)
-
-        for path in files.values():
-            if path.suffix == ".py":
-                security_issues = check_code_security(
-                    path.read_text(),
-                    str(path)
-                )
-                if any(i.severity == "blocked" for i in security_issues):
-                    raise SecurityError(security_issues)
-
-        return files</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Testing Your Hooks</h3>
-                <p class="mb-4">Create intentionally bad inputs:</p>
-                <pre><code class="language-python"># tests/unit/test_hooks.py
-
-import pytest
-from cli_generator.models import CLISpec, CommandSpec
-from cli_generator.validators.spec_validator import validate_spec
-from cli_generator.validators.security_validator import check_code_security
-
-
-class TestSpecValidationHook:
-    """Tests for spec validation hook."""
-
-    def test_catches_duplicate_commands(self):
-        """Duplicate command names should be caught."""
-        spec = CLISpec(
-            name="test",
-            description="Test CLI",
-            commands=[
-                CommandSpec(name="list", description="List items"),
-                CommandSpec(name="list", description="List again"),  # Duplicate!
-            ]
-        )
-
-        errors, warnings = validate_spec(spec)
-        assert len(errors) > 0
-        assert "Duplicate" in errors[0]
-
-    def test_warns_on_delete_without_confirm(self):
-        """Delete commands without confirmation should warn."""
-        spec = CLISpec(
-            name="test",
-            description="Test CLI",
-            commands=[
-                CommandSpec(name="delete", description="Delete items"),
-            ]
-        )
-
-        errors, warnings = validate_spec(spec)
-        assert len(warnings) > 0
-        assert "confirmation" in warnings[0].lower()
-
-
-class TestSecurityHook:
-    """Tests for security check hook."""
-
-    def test_blocks_eval(self):
-        """eval() should be blocked."""
-        code = '''
-@click.command()
-def run(code):
-    eval(code)  # Dangerous!
-'''
-        issues = check_code_security(code, "test.py")
-        assert len(issues) > 0
-        assert any(i.pattern == "eval() function" for i in issues)
-
-    def test_blocks_shell_true(self):
-        """subprocess with shell=True should be blocked."""
-        code = '''
+        sys.exit(0)
+
+    except Exception:
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+                <h4 class="text-lg font-semibold mt-6 mb-3">Hook 5: SessionStart - Environment Check</h4>
+                <p class="mb-2">Create <code>.claude/hooks/session_start.py</code>:</p>
+
+                <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 mb-4">
+                    <p class="text-sm"><strong>SessionStart vs CLAUDE.md:</strong> CLAUDE.md is static text loaded into context. SessionStart runs dynamic commands (check git, verify deps, fetch config).</p>
+                </div>
+
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""
+SessionStart Hook: Runs once when session begins.
+Use for dynamic checks that CLAUDE.md can't do.
+"""
+import json
 import subprocess
-subprocess.call(cmd, shell=True)
-'''
-        issues = check_code_security(code, "test.py")
-        assert len(issues) > 0
-        assert any("shell" in i.pattern.lower() for i in issues)
+import sys
 
-    def test_allows_safe_subprocess(self):
-        """subprocess with shell=False should be allowed."""
-        code = '''
-import subprocess
-subprocess.call(["ls", "-la"], shell=False)
-'''
-        issues = check_code_security(code, "test.py")
-        blocked = [i for i in issues if i.severity == "blocked"]
-        assert len(blocked) == 0</code></pre>
+def main():
+    try:
+        input_data = json.load(sys.stdin)
+
+        # Show current git branch
+        branch = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True, text=True
+        )
+        if branch.stdout.strip():
+            print(f"Branch: {branch.stdout.strip()}")
+
+        sys.exit(0)
+    except Exception:
+        sys.exit(0)
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4"><strong>What you'll see:</strong> Branch name appears in session output when Claude Code starts.</p>
+
+                <h4 class="text-lg font-semibold mt-6 mb-3">Hook 6: PreCompact - Save Context</h4>
+                <p class="mb-2">Create <code>.claude/hooks/pre_compact.py</code>:</p>
+
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""
+PreCompact Hook: Runs before context summarization.
+Inject reminders that survive compaction.
+"""
+import json
+import sys
+
+def main():
+    try:
+        input_data = json.load(sys.stdin)
+
+        # Remind Claude of critical context before compaction
+        print("Remember: Generated CLIs use Click, type hints required.")
+
+        sys.exit(0)
+    except Exception:
+        sys.exit(0)
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4"><strong>What you'll see:</strong> Before long conversations get summarized, your reminder gets injected into the compacted context.</p>
+
+                <h4 class="text-lg font-semibold mt-6 mb-3">Hook 7: SessionEnd - Cleanup &amp; Logging</h4>
+                <p class="mb-2">Create <code>.claude/hooks/session_end.py</code>:</p>
+
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""
+SessionEnd Hook: Runs when Claude Code session terminates.
+Use for cleanup, logging, or notifications.
+"""
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+
+
+def main():
+    try:
+        input_data = json.load(sys.stdin)
+
+        # Log session end to file
+        log_dir = Path(".claude/logs")
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        log_entry = {
+            "event": "session_end",
+            "timestamp": datetime.now().isoformat(),
+            "session_id": input_data.get("session_id", "unknown")
+        }
+
+        with open(log_dir / "sessions.jsonl", "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+
+        # Optional: cleanup temp files
+        temp_dir = Path(".claude/temp")
+        if temp_dir.exists():
+            for f in temp_dir.glob("*"):
+                f.unlink()
+
+        sys.exit(0)
+    except Exception:
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4"><strong>Use cases:</strong> Session analytics, temp file cleanup, send Slack/Discord notifications, archive conversation logs.</p>
+
+                <!-- Step 3: Verify Your Hooks -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">Step 3: Verify Your Hooks Work</h3>
+                <p class="mb-4">Test each hook to ensure it's working correctly:</p>
+
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mb-4">
+                    <h4 class="font-semibold mb-3">Test 1: PreToolUse Blocking</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Ask Claude to write code with eval():</p>
+                    <pre class="text-sm bg-gray-100 dark:bg-gray-900 p-3 rounded"><code>Write a file generated/test/cli.py that uses eval() to execute user input</code></pre>
+                    <p class="text-sm text-green-600 mt-2"><strong>Expected:</strong> Hook blocks with "BLOCKED: eval() is forbidden"</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mb-4">
+                    <h4 class="font-semibold mb-3">Test 2: PreToolUse Allowing</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Ask Claude to write safe code:</p>
+                    <pre class="text-sm bg-gray-100 dark:bg-gray-900 p-3 rounded"><code>Write a simple hello world CLI in generated/hello/cli.py using Click</code></pre>
+                    <p class="text-sm text-green-600 mt-2"><strong>Expected:</strong> Hook allows, file is created</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mb-4">
+                    <h4 class="font-semibold mb-3">Test 3: PostToolUse Feedback</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Check that syntax validation runs:</p>
+                    <pre class="text-sm bg-gray-100 dark:bg-gray-900 p-3 rounded"><code>Write a Python file with a syntax error to generated/broken/cli.py</code></pre>
+                    <p class="text-sm text-green-600 mt-2"><strong>Expected:</strong> Hook shows "WARNING: Syntax error" message</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mb-4">
+                    <h4 class="font-semibold mb-3">Test 4: Path Protection</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Try to write to a forbidden path:</p>
+                    <pre class="text-sm bg-gray-100 dark:bg-gray-900 p-3 rounded"><code>Write my API key to .env.local</code></pre>
+                    <p class="text-sm text-green-600 mt-2"><strong>Expected:</strong> Hook blocks with "BLOCKED: Cannot write to '.env.local'"</p>
+                </div>
+
+                <!-- Testing via Command Line -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">Testing Hooks via Command Line</h3>
+                <p class="mb-4">Test hooks directly by piping JSON to stdin:</p>
+
+                <pre><code class="language-bash"># PreToolUse: Block dangerous pattern (exit 2)
+echo '{"tool_name": "Write", "tool_input": {"file_path": "generated/cli.py", "content": "eval(x)"}}' \
+  | uv run python .claude/hooks/pre_tool_use.py; echo "Exit: $?"
+
+# PreToolUse: Allow safe content (exit 0)
+echo '{"tool_name": "Write", "tool_input": {"file_path": "generated/cli.py", "content": "print(x)"}}' \
+  | uv run python .claude/hooks/pre_tool_use.py; echo "Exit: $?"
+
+# PostToolUse: Check syntax (create file first)
+mkdir -p generated && echo 'print("ok")' > generated/test.py
+echo '{"tool_name": "Write", "tool_input": {"file_path": "generated/test.py"}}' \
+  | uv run python .claude/hooks/post_tool_use.py
+
+# Stop: Show reminder when generated files exist
+echo '{}' | uv run python .claude/hooks/stop.py
+
+# UserPromptSubmit: Inject context
+echo '{"prompt": "Write a CLI"}' | uv run python .claude/hooks/user_prompt_submit.py</code></pre>
+
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 my-4">
+                    <p class="text-sm"><strong>Exit codes:</strong> <code>0</code> = allow, <code>2</code> = block. Only PreToolUse can block (before operation). PostToolUse/Stop provide feedback only.</p>
+                </div>
+
+                <!-- How Claude Sees Blocked Operations -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">What Claude Sees When Blocked</h3>
+                <p class="mb-4">When a hook exits with code 2, Claude receives the stderr output and adjusts:</p>
+
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 font-mono text-sm mb-6">
+                    <div class="text-red-500 mb-2">Hook blocked operation:</div>
+                    <div class="text-gray-600 dark:text-gray-400">BLOCKED: eval() is forbidden</div>
+                    <div class="text-gray-600 dark:text-gray-400">Found in: generated/test/cli.py</div>
+                    <div class="mt-3 text-blue-500">Claude's response:</div>
+                    <div class="text-gray-700 dark:text-gray-300">"I'll rewrite this without eval() - let me use a safer approach..."</div>
+                </div>
+
+                <!-- Advanced: JSON Response Reference -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">Advanced: JSON Response Reference</h3>
+                <p class="mb-4">For fine-grained control, print JSON to stdout instead of using exit codes. Here's the complete schema:</p>
+
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""
+Complete JSON Response Schema for Claude Code Hooks.
+Not all fields are required - use only what you need.
+"""
+import json
+
+# === UNIVERSAL FIELDS (all hooks) ===
+response = {
+    # Emergency stop - highest priority, overrides everything
+    "continue": True,              # False = stop Claude entirely
+    "stopReason": "User message",  # Shown to user when continue=False
+
+    # Output control
+    "suppressOutput": False,       # True = hide stdout from transcript
+    "systemMessage": "Warning",    # Warning banner shown to user
+}
+
+# === PreToolUse SPECIFIC ===
+pretool_response = {
+    "decision": "block",           # "approve" | "block" (deprecated names)
+    "reason": "Fed to Claude",     # Claude sees this, adjusts behavior
+
+    # Newer pattern (v2.0.45+) - more explicit
+    "hookSpecificOutput": {
+        "permissionDecision": "deny",  # "allow" | "deny" | "ask"
+        "permissionDecisionReason": "Shown to user, not Claude",
+        "updatedInput": {              # Modify tool parameters!
+            "command": "safer_command"
+        }
+    }
+}
+
+# === PostToolUse SPECIFIC ===
+posttool_response = {
+    "decision": "block",           # Feedback only (tool already ran)
+    "reason": "Issue found",       # Claude sees this for next action
+}
+
+# === Stop/SubagentStop SPECIFIC ===
+stop_response = {
+    "decision": "block",           # Forces Claude to continue working
+    "reason": "Tests not run yet", # REQUIRED - tells Claude what to do
+}</code></pre>
+
+                <!-- Control Flow Priority -->
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 my-6">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        Control Flow Priority
+                    </h4>
+                    <p class="text-sm mb-3">When multiple control mechanisms are used, this priority applies:</p>
+                    <div class="flex flex-wrap items-center gap-2 font-mono text-sm">
+                        <span class="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full">continue: false</span>
+                        <span class="text-gray-400">→</span>
+                        <span class="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full">JSON "decision": "block"</span>
+                        <span class="text-gray-400">→</span>
+                        <span class="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-full">exit code 2</span>
+                    </div>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-2"><code>continue: false</code> is the nuclear option - stops Claude immediately with no recovery.</p>
+                </div>
+
+                <!-- Advanced Patterns Section -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">Advanced Patterns</h3>
+
+                <!-- Pattern 1: Modify Tool Input -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mb-4">
+                    <h4 class="font-semibold mb-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded">PreToolUse</span>
+                        Modify Tool Parameters
+                    </h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Silently modify tool inputs before execution (invisible to Claude):</p>
+                    <pre class="text-sm"><code class="language-python"># Add safety flags to Bash commands
+def modify_bash_command():
+    data = json.load(sys.stdin)
+    if data.get("tool_name") == "Bash":
+        cmd = data["tool_input"].get("command", "")
+        # Add timeout to long-running commands
+        if "npm install" in cmd:
+            response = {
+                "hookSpecificOutput": {
+                    "permissionDecision": "allow",
+                    "updatedInput": {
+                        "command": f"timeout 300 {cmd}",
+                        "description": data["tool_input"].get("description", "")
+                    }
+                }
+            }
+            print(json.dumps(response))
+            return
+    sys.exit(0)</code></pre>
+                </div>
+
+                <!-- Pattern 2: Suppress Output -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mb-4">
+                    <h4 class="font-semibold mb-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs rounded">Any Hook</span>
+                        Silent Logging
+                    </h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Log events without cluttering the transcript:</p>
+                    <pre class="text-sm"><code class="language-python"># Log all tool calls to file without showing in transcript
+def silent_logger():
+    data = json.load(sys.stdin)
+    with open(".claude/logs/tools.jsonl", "a") as f:
+        f.write(json.dumps({
+            "timestamp": datetime.now().isoformat(),
+            "tool": data.get("tool_name"),
+            "input": data.get("tool_input")
+        }) + "\n")
+
+    # Suppress any stdout from appearing in transcript
+    print(json.dumps({"suppressOutput": True}))
+    sys.exit(0)</code></pre>
+                </div>
+
+                <!-- Pattern 3: Force Continuation -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mb-4">
+                    <h4 class="font-semibold mb-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs rounded">Stop</span>
+                        Force Task Completion
+                    </h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Prevent Claude from stopping until requirements are met:</p>
+                    <pre class="text-sm"><code class="language-python"># Block stopping until tests pass
+def ensure_tests_pass():
+    data = json.load(sys.stdin)
+
+    # Check if tests exist and pass
+    result = subprocess.run(
+        ["uv", "run", "pytest", "-q", "--tb=no"],
+        capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        print(json.dumps({
+            "decision": "block",
+            "reason": f"Tests failing. Fix before completing:\n{result.stdout}"
+        }))
+    sys.exit(0)</code></pre>
+                </div>
+
+                <!-- Pattern 4: Emergency Stop -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 mb-4">
+                    <h4 class="font-semibold mb-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs rounded">Any Hook</span>
+                        Emergency Stop
+                    </h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Immediately halt Claude (use sparingly):</p>
+                    <pre class="text-sm"><code class="language-python"># Stop everything if cost threshold exceeded
+def cost_guard():
+    data = json.load(sys.stdin)
+
+    if get_session_cost() > MAX_COST_THRESHOLD:
+        print(json.dumps({
+            "continue": False,
+            "stopReason": "Session cost limit reached. Please start a new session."
+        }))
+    sys.exit(0)</code></pre>
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">⚠️ <code>continue: false</code> cannot be recovered from - Claude stops immediately.</p>
+                </div>
+
+                <!-- PermissionRequest Hook Note -->
+                <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 my-6">
+                    <p class="text-sm"><strong>New in v2.0.45:</strong> The <code>PermissionRequest</code> hook intercepts permission dialogs before they're shown to users. Useful for auto-approving safe operations or adding custom approval logic. See <a href="https://code.claude.com/docs/en/hooks" class="text-blue-600 hover:underline" target="_blank">official docs</a>.</p>
+                </div>
+
+                <!-- Hook Execution Environment -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">Hook Execution Environment</h3>
+                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <div class="font-semibold mb-2">Timeout</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">60 seconds per hook</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <div class="font-semibold mb-2">Parallelization</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">All matching hooks run in parallel</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <div class="font-semibold mb-2">Working Directory</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Current project directory</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <div class="font-semibold mb-2">Environment</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Inherits Claude Code's env vars</div>
+                    </div>
+                </div>
+
+                <!-- Best Practices -->
+                <h3 class="text-xl font-semibold mt-8 mb-3">Best Practices</h3>
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 mb-6">
+                    <ul class="space-y-2 text-sm">
+                        <li><strong>Fail open</strong> - Use <code>sys.exit(0)</code> in exception handlers</li>
+                        <li><strong>Clear messages</strong> - Provide helpful error messages in stderr</li>
+                        <li><strong>Start simple</strong> - Use exit codes first, JSON only when needed</li>
+                    </ul>
+                </div>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Day 5 Checklist</h3>
                 <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="checklist-item"><input type="checkbox" id="d5-1" @change="saveChecklist('d5-1', $event.target.checked)" :checked="checklist['d5-1']"><label for="d5-1">Four hooks implemented</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d5-2" @change="saveChecklist('d5-2', $event.target.checked)" :checked="checklist['d5-2']"><label for="d5-2">Spec validation catches duplicate commands/options</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d5-3" @change="saveChecklist('d5-3', $event.target.checked)" :checked="checklist['d5-3']"><label for="d5-3">Code validation catches syntax errors</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d5-4" @change="saveChecklist('d5-4', $event.target.checked)" :checked="checklist['d5-4']"><label for="d5-4">Security check blocks dangerous patterns</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d5-5" @change="saveChecklist('d5-5', $event.target.checked)" :checked="checklist['d5-5']"><label for="d5-5">Coverage check warns on low coverage</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d5-6" @change="saveChecklist('d5-6', $event.target.checked)" :checked="checklist['d5-6']"><label for="d5-6">Hooks integrated into generation pipeline</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d5-7" @change="saveChecklist('d5-7', $event.target.checked)" :checked="checklist['d5-7']"><label for="d5-7">Tests for all hooks passing</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d5-1" @change="saveChecklist('d5-1', $event.target.checked)" :checked="checklist['d5-1']"><label for="d5-1">Hooks configured in .claude/settings.json (7 hooks)</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d5-2" @change="saveChecklist('d5-2', $event.target.checked)" :checked="checklist['d5-2']"><label for="d5-2">PreToolUse blocks dangerous patterns, PostToolUse validates syntax</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d5-3" @change="saveChecklist('d5-3', $event.target.checked)" :checked="checklist['d5-3']"><label for="d5-3">Stop shows test reminder, UserPromptSubmit injects context</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d5-4" @change="saveChecklist('d5-4', $event.target.checked)" :checked="checklist['d5-4']"><label for="d5-4">SessionStart/PreCompact/SessionEnd lifecycle hooks working</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d5-5" @change="saveChecklist('d5-5', $event.target.checked)" :checked="checklist['d5-5']"><label for="d5-5">Tested hooks via command line</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d5-6" @change="saveChecklist('d5-6', $event.target.checked)" :checked="checklist['d5-6']"><label for="d5-6">Understand JSON response schema and control flow priority</label></div>
                 </div>
                 <div class="flex justify-end mt-6"><button @click="toggleDay(5)" :class="completedDays.includes(5) ? 'bg-green-500' : 'bg-primary'" class="px-6 py-2 text-white rounded-lg hover:opacity-90"><span x-text="completedDays.includes(5) ? 'Completed!' : 'Mark as Complete'"></span></button></div>
             </section>
@@ -5550,14 +5804,62 @@ class SubagentCoordinator:
             lines.append(f"  {icon} {agent}: {status.value}")
         return "\n".join(lines)</code></pre>
 
+                <h3 class="text-xl font-semibold mt-8 mb-3">SubagentStop Hook: Validate Subagent Output</h3>
+                <p class="mb-4">The <code>SubagentStop</code> hook fires when any subagent completes. Use it to validate output before the main agent continues:</p>
+
+                <p class="mb-2">Create <code>.claude/hooks/subagent_stop.py</code>:</p>
+                <pre><code class="language-python">#!/usr/bin/env python3
+"""
+SubagentStop Hook: Runs when a subagent completes.
+Validate output quality before main agent accepts it.
+"""
+import json
+import sys
+
+def main():
+    try:
+        input_data = json.load(sys.stdin)
+
+        # subagent_result contains the subagent's output
+        result = input_data.get("subagent_result", "")
+
+        # Example: Check if code generator produced valid Python
+        if "def " not in result and "class " not in result:
+            # Block: force subagent to retry
+            output = {
+                "decision": "block",
+                "reason": "Subagent output missing function/class definitions. Please retry."
+            }
+            print(json.dumps(output))
+        else:
+            print(f"Subagent completed: {len(result)} chars of output")
+
+        sys.exit(0)
+    except Exception:
+        sys.exit(0)
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4"><strong>What you'll see:</strong> After each subagent finishes, the hook validates output. If blocked, the subagent is asked to retry.</p>
+
+                <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 my-4">
+                    <p class="text-sm"><strong>Configuration:</strong> Add to <code>.claude/settings.json</code>:</p>
+                    <pre class="text-sm mt-2"><code class="language-json">"SubagentStop": [
+  { "matcher": "", "hooks": [
+    { "type": "command", "command": "uv run python .claude/hooks/subagent_stop.py" }
+  ]}
+]</code></pre>
+                </div>
+
                 <h3 class="text-xl font-semibold mt-8 mb-3">Day 7 Checklist</h3>
                 <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                     <div class="checklist-item"><input type="checkbox" id="d7-1" @change="saveChecklist('d7-1', $event.target.checked)" :checked="checklist['d7-1']"><label for="d7-1">Four subagent roles defined</label></div>
                     <div class="checklist-item"><input type="checkbox" id="d7-2" @change="saveChecklist('d7-2', $event.target.checked)" :checked="checklist['d7-2']"><label for="d7-2">Integrator coordination workflow defined</label></div>
                     <div class="checklist-item"><input type="checkbox" id="d7-3" @change="saveChecklist('d7-3', $event.target.checked)" :checked="checklist['d7-3']"><label for="d7-3">/parallel-create command implemented</label></div>
                     <div class="checklist-item"><input type="checkbox" id="d7-4" @change="saveChecklist('d7-4', $event.target.checked)" :checked="checklist['d7-4']"><label for="d7-4">SubagentCoordinator class working</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d7-5" @change="saveChecklist('d7-5', $event.target.checked)" :checked="checklist['d7-5']"><label for="d7-5">Successfully created one CLI using subagents</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d7-6" @change="saveChecklist('d7-6', $event.target.checked)" :checked="checklist['d7-6']"><label for="d7-6">Observed parallel work execution (code + tests)</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d7-5" @change="saveChecklist('d7-5', $event.target.checked)" :checked="checklist['d7-5']"><label for="d7-5">SubagentStop hook validates output</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d7-6" @change="saveChecklist('d7-6', $event.target.checked)" :checked="checklist['d7-6']"><label for="d7-6">Successfully created one CLI using subagents</label></div>
                 </div>
                 <div class="flex justify-end mt-6"><button @click="toggleDay(7)" :class="completedDays.includes(7) ? 'bg-green-500' : 'bg-primary'" class="px-6 py-2 text-white rounded-lg hover:opacity-90"><span x-text="completedDays.includes(7) ? 'Completed!' : 'Mark as Complete'"></span></button></div>
             </section>
@@ -8186,7 +8488,7 @@ ENTRYPOINT ["my-cli"]</code></pre>
                 notes: {},
                 showNotesPanel: false,
                 editingNoteId: null,
-                dayTitles: { 1: 'Project Setup', 2: 'Core Models', 3: 'Slash Commands', 4: 'Command Chaining', 5: 'Quality Hooks', 6: 'Context-Aware Skills', 7: 'Subagent Coordination', 8: 'MCP External Tools', 9: 'Memory & Context', 10: 'Testing & Packaging', 11: 'Documentation', 12: 'Documentation', 13: 'Final Testing', 14: 'Release' },
+                dayTitles: { 1: 'Project Setup', 2: 'Core Models', 3: 'Slash Commands', 4: 'Command Chaining', 5: 'Claude Code Hooks', 6: 'Context-Aware Skills', 7: 'Subagent Coordination', 8: 'MCP External Tools', 9: 'Memory & Context', 10: 'Testing & Packaging', 11: 'Documentation', 12: 'Documentation', 13: 'Final Testing', 14: 'Release' },
                 init() {
                     // Load saved data
                     this.completedDays = JSON.parse(localStorage.getItem('tutorial-completed-days') || '[]');
