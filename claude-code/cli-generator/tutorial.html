@@ -5286,28 +5286,28 @@ no input file"</pre>
                     </div>
                     <div class="mermaid hover-mode" id="subagent-architecture-mermaid">
 flowchart TD
-    Human[Human Request] --> Integrator
+    A[Human Request] --> B
     subgraph Agents[Specialized Subagents]
-        SD[Spec Designer]
-        CG[Code Generator]
-        TW[Test Writer]
-        RV[Reviewer]
+        C[Spec Designer]
+        D[Code Generator]
+        E[Test Writer]
+        F[Reviewer]
     end
-    Integrator[Integrator] --> SD
-    SD --> Integrator
-    Integrator --> CG
-    Integrator --> TW
-    CG --> Integrator
-    TW --> Integrator
-    Integrator --> RV
-    RV --> Integrator
-    Integrator --> Human
-    style Integrator fill:#fef3c7,stroke:#d97706
-    style SD fill:#e0f2fe,stroke:#0284c7
-    style CG fill:#dcfce7,stroke:#16a34a
-    style TW fill:#fce7f3,stroke:#db2777
-    style RV fill:#f3e8ff,stroke:#9333ea
-    style Human fill:#f1f5f9,stroke:#64748b
+    B[Integrator] --> C
+    C --> B
+    B --> D
+    B --> E
+    D --> B
+    E --> B
+    B --> F
+    F --> B
+    B --> A
+    style B fill:#fef3c7,stroke:#d97706
+    style C fill:#e0f2fe,stroke:#0284c7
+    style D fill:#dcfce7,stroke:#16a34a
+    style E fill:#fce7f3,stroke:#db2777
+    style F fill:#f3e8ff,stroke:#9333ea
+    style A fill:#f1f5f9,stroke:#64748b
                     </div>
                 </div>
 
@@ -5904,22 +5904,22 @@ if __name__ == "__main__":
                     <div class="mermaid hover-mode" id="mcp-integration-mermaid">
 flowchart LR
     subgraph MCP[MCP External Tools]
-        PyPI[PyPI Checker]
-        GitHub[GitHub Creator]
-        Deps[Dependency Validator]
-        Fmt[Code Formatter]
+        B[PyPI Checker]
+        F[GitHub Creator]
+        D[Dependency Validator]
+        E[Code Formatter]
     end
-    Design[CLI Design] --> PyPI
-    PyPI --> Generate[Code Generation]
-    Generate --> Deps
-    Deps --> Fmt
-    Fmt --> GitHub
-    style PyPI fill:#e0f2fe,stroke:#0284c7
-    style GitHub fill:#fef3c7,stroke:#d97706
-    style Deps fill:#dcfce7,stroke:#16a34a
-    style Fmt fill:#fce7f3,stroke:#db2777
-    style Design fill:#f1f5f9,stroke:#64748b
-    style Generate fill:#f3e8ff,stroke:#9333ea
+    A[CLI Design] --> B
+    B --> C[Code Generation]
+    C --> D
+    D --> E
+    E --> F
+    style B fill:#e0f2fe,stroke:#0284c7
+    style F fill:#fef3c7,stroke:#d97706
+    style D fill:#dcfce7,stroke:#16a34a
+    style E fill:#fce7f3,stroke:#db2777
+    style A fill:#f1f5f9,stroke:#64748b
+    style C fill:#f3e8ff,stroke:#9333ea
                     </div>
                 </div>
 
@@ -8253,63 +8253,63 @@ ENTRYPOINT ["my-cli"]</code></pre>
                 }
             },
             'subagent-architecture': {
-                nodes: ['Human', 'Integrator', 'SD', 'CG', 'TW', 'RV'],
+                nodes: ['A', 'B', 'C', 'D', 'E', 'F'],
                 edges: [
-                    { from: 'Human', to: 'Integrator' },      // 0
-                    { from: 'Integrator', to: 'SD' },         // 1
-                    { from: 'SD', to: 'Integrator' },         // 2
-                    { from: 'Integrator', to: 'CG' },         // 3
-                    { from: 'Integrator', to: 'TW' },         // 4
-                    { from: 'CG', to: 'Integrator' },         // 5
-                    { from: 'TW', to: 'Integrator' },         // 6
-                    { from: 'Integrator', to: 'RV' },         // 7
-                    { from: 'RV', to: 'Integrator' },         // 8
-                    { from: 'Integrator', to: 'Human' }       // 9
+                    { from: 'A', to: 'B' },      // 0: Human → Integrator
+                    { from: 'B', to: 'C' },      // 1: Integrator → Spec Designer
+                    { from: 'C', to: 'B' },      // 2: Spec Designer → Integrator
+                    { from: 'B', to: 'D' },      // 3: Integrator → Code Generator
+                    { from: 'B', to: 'E' },      // 4: Integrator → Test Writer
+                    { from: 'D', to: 'B' },      // 5: Code Generator → Integrator
+                    { from: 'E', to: 'B' },      // 6: Test Writer → Integrator
+                    { from: 'B', to: 'F' },      // 7: Integrator → Reviewer
+                    { from: 'F', to: 'B' },      // 8: Reviewer → Integrator
+                    { from: 'B', to: 'A' }       // 9: Integrator → Human
                 ],
                 steps: [
-                    { nodes: ['Human'], edges: [], description: 'Human makes a request: "Create a CLI for image conversion"' },
-                    { nodes: ['Human', 'Integrator'], edges: [0], description: 'Integrator receives request and coordinates the workflow' },
-                    { nodes: ['Integrator', 'SD'], edges: [1], description: 'Integrator delegates to Spec Designer for CLI UX design' },
-                    { nodes: ['SD', 'Integrator'], edges: [2], description: 'Spec Designer returns CLISpec with commands and options' },
-                    { nodes: ['Integrator', 'CG', 'TW'], edges: [3, 4], description: 'Integrator sends spec to Code Generator and Test Writer in parallel' },
-                    { nodes: ['CG', 'TW', 'Integrator'], edges: [5, 6], description: 'Both return their outputs: Python code and pytest tests' },
-                    { nodes: ['Integrator', 'RV'], edges: [7], description: 'Integrator sends everything to Reviewer for quality check' },
-                    { nodes: ['RV', 'Integrator'], edges: [8], description: 'Reviewer validates consistency and returns approval or feedback' },
-                    { nodes: ['Integrator', 'Human'], edges: [9], description: 'Integrator delivers final result to Human' }
+                    { nodes: ['A'], edges: [], description: 'Human makes a request: "Create a CLI for image conversion"' },
+                    { nodes: ['A', 'B'], edges: [0], description: 'Integrator receives request and coordinates the workflow' },
+                    { nodes: ['B', 'C'], edges: [1], description: 'Integrator delegates to Spec Designer for CLI UX design' },
+                    { nodes: ['C', 'B'], edges: [2], description: 'Spec Designer returns CLISpec with commands and options' },
+                    { nodes: ['B', 'D', 'E'], edges: [3, 4], description: 'Integrator sends spec to Code Generator and Test Writer in parallel' },
+                    { nodes: ['D', 'E', 'B'], edges: [5, 6], description: 'Both return their outputs: Python code and pytest tests' },
+                    { nodes: ['B', 'F'], edges: [7], description: 'Integrator sends everything to Reviewer for quality check' },
+                    { nodes: ['F', 'B'], edges: [8], description: 'Reviewer validates consistency and returns approval or feedback' },
+                    { nodes: ['B', 'A'], edges: [9], description: 'Integrator delivers final result to Human' }
                 ],
                 connections: {
-                    'Human': { outgoing: ['Integrator'], incoming: ['Integrator'] },
-                    'Integrator': { outgoing: ['SD', 'CG', 'TW', 'RV', 'Human'], incoming: ['Human', 'SD', 'CG', 'TW', 'RV'] },
-                    'SD': { outgoing: ['Integrator'], incoming: ['Integrator'] },
-                    'CG': { outgoing: ['Integrator'], incoming: ['Integrator'] },
-                    'TW': { outgoing: ['Integrator'], incoming: ['Integrator'] },
-                    'RV': { outgoing: ['Integrator'], incoming: ['Integrator'] }
+                    'A': { outgoing: ['B'], incoming: ['B'] },
+                    'B': { outgoing: ['C', 'D', 'E', 'F', 'A'], incoming: ['A', 'C', 'D', 'E', 'F'] },
+                    'C': { outgoing: ['B'], incoming: ['B'] },
+                    'D': { outgoing: ['B'], incoming: ['B'] },
+                    'E': { outgoing: ['B'], incoming: ['B'] },
+                    'F': { outgoing: ['B'], incoming: ['B'] }
                 }
             },
             'mcp-integration': {
-                nodes: ['Design', 'PyPI', 'Generate', 'Deps', 'Fmt', 'GitHub'],
+                nodes: ['A', 'B', 'C', 'D', 'E', 'F'],
                 edges: [
-                    { from: 'Design', to: 'PyPI' },           // 0
-                    { from: 'PyPI', to: 'Generate' },         // 1
-                    { from: 'Generate', to: 'Deps' },         // 2
-                    { from: 'Deps', to: 'Fmt' },              // 3
-                    { from: 'Fmt', to: 'GitHub' }             // 4
+                    { from: 'A', to: 'B' },      // 0: Design → PyPI
+                    { from: 'B', to: 'C' },      // 1: PyPI → Generate
+                    { from: 'C', to: 'D' },      // 2: Generate → Deps
+                    { from: 'D', to: 'E' },      // 3: Deps → Fmt
+                    { from: 'E', to: 'F' }       // 4: Fmt → GitHub
                 ],
                 steps: [
-                    { nodes: ['Design'], edges: [], description: 'Start with CLI design from /design command' },
-                    { nodes: ['Design', 'PyPI'], edges: [0], description: 'PyPI Checker verifies package name is available' },
-                    { nodes: ['PyPI', 'Generate'], edges: [1], description: 'If available, Code Generation creates the CLI' },
-                    { nodes: ['Generate', 'Deps'], edges: [2], description: 'Dependency Validator checks all packages exist and are compatible' },
-                    { nodes: ['Deps', 'Fmt'], edges: [3], description: 'Code Formatter runs Black + isort for consistent style' },
-                    { nodes: ['Fmt', 'GitHub'], edges: [4], description: 'GitHub Creator sets up repository with CI/CD' }
+                    { nodes: ['A'], edges: [], description: 'Start with CLI design from /design command' },
+                    { nodes: ['A', 'B'], edges: [0], description: 'PyPI Checker verifies package name is available' },
+                    { nodes: ['B', 'C'], edges: [1], description: 'If available, Code Generation creates the CLI' },
+                    { nodes: ['C', 'D'], edges: [2], description: 'Dependency Validator checks all packages exist and are compatible' },
+                    { nodes: ['D', 'E'], edges: [3], description: 'Code Formatter runs Black + isort for consistent style' },
+                    { nodes: ['E', 'F'], edges: [4], description: 'GitHub Creator sets up repository with CI/CD' }
                 ],
                 connections: {
-                    'Design': { outgoing: ['PyPI'], incoming: [] },
-                    'PyPI': { outgoing: ['Generate'], incoming: ['Design'] },
-                    'Generate': { outgoing: ['Deps'], incoming: ['PyPI'] },
-                    'Deps': { outgoing: ['Fmt'], incoming: ['Generate'] },
-                    'Fmt': { outgoing: ['GitHub'], incoming: ['Deps'] },
-                    'GitHub': { outgoing: [], incoming: ['Fmt'] }
+                    'A': { outgoing: ['B'], incoming: [] },
+                    'B': { outgoing: ['C'], incoming: ['A'] },
+                    'C': { outgoing: ['D'], incoming: ['B'] },
+                    'D': { outgoing: ['E'], incoming: ['C'] },
+                    'E': { outgoing: ['F'], incoming: ['D'] },
+                    'F': { outgoing: [], incoming: ['E'] }
                 }
             }
         };
