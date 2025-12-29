@@ -4510,751 +4510,714 @@ def cost_guard():
 
                 <h3 class="text-xl font-semibold mb-3">Learning Objectives</h3>
                 <ul class="list-disc list-inside mb-6 space-y-1">
-                    <li>Create behaviors that activate without explicit invocation</li>
-                    <li>Balance helpfulness with noise</li>
-                    <li>Tune activation patterns</li>
+                    <li>Understand skills as markdown instruction files (not code)</li>
+                    <li>Apply TDD to skill creation: test scenario first, then content</li>
+                    <li>Create workflow skills with phases, checkpoints, and red flags</li>
+                    <li>Build project-specific skills tailored to your workflow</li>
+                    <li>Avoid common anti-patterns that make skills fail</li>
                 </ul>
 
                 <h3 class="text-xl font-semibold mb-3">What Are Skills?</h3>
-                <p class="mb-4">Skills are like helpful assistants that notice what you're doing and offer relevant help:</p>
+                <p class="mb-4">Skills are <strong>markdown files</strong> that teach Claude specialized capabilities. They're not code—they're instructions Claude reads and follows when relevant.</p>
+
+                <div class="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 mb-6">
+                    <p class="font-semibold text-blue-800 dark:text-blue-200">Key Insight</p>
+                    <p class="text-blue-700 dark:text-blue-300">Skills are context documents, not programmatic components. You don't write Python code—you write markdown instructions that Claude follows naturally.</p>
+                </div>
+
                 <table>
                     <thead><tr><th>Aspect</th><th>Commands</th><th>Skills</th></tr></thead>
                     <tbody>
-                        <tr><td>Activation</td><td>Explicit (/command)</td><td>Automatic (pattern match)</td></tr>
-                        <tr><td>User action</td><td>Types command</td><td>Continues conversation</td></tr>
-                        <tr><td>Scope</td><td>Defined workflow</td><td>Contextual suggestion</td></tr>
-                        <tr><td>Control</td><td>User chooses when</td><td>System chooses when</td></tr>
+                        <tr><td>Format</td><td>Markdown prompt file</td><td>SKILL.md with YAML frontmatter</td></tr>
+                        <tr><td>Activation</td><td>Explicit (/command)</td><td>Model-invoked (Claude decides)</td></tr>
+                        <tr><td>Discovery</td><td>User knows command exists</td><td>Claude reads description, matches to task</td></tr>
+                        <tr><td>Location</td><td><code>.claude/commands/</code></td><td><code>.claude/skills/skill-name/</code></td></tr>
                     </tbody>
                 </table>
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Skill 1: CLI Pattern Suggester</h3>
-                <p class="mb-2"><strong>Purpose:</strong> Suggest common CLI patterns when designing.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/skills/pattern_suggester.md</code></p>
+                <h3 class="text-xl font-semibold mt-8 mb-3">SKILL.md Structure</h3>
+                <p class="mb-4">Every skill requires a <code>SKILL.md</code> file with YAML frontmatter:</p>
 
-                <pre><code class="language-markdown"># CLI Pattern Suggester Skill
+                <pre><code class="language-yaml">---
+name: skill-name-here
+description: What this skill does and when to use it.
+---
 
-## Activation Patterns
+# Skill Title
 
-Activate when ALL of these are true:
-1. User is designing a CLI (/design or describing a CLI)
-2. Description matches a common pattern
-3. User hasn't explicitly rejected suggestions
+[Markdown instructions Claude follows]</code></pre>
 
-Pattern matches:
-- "file" + "convert" → suggest batch processing, format options
-- "download" → suggest progress bar, resume, concurrent downloads
-- "database" + "migrate" → suggest dry-run, rollback, status commands
-- "deploy" → suggest environments, dry-run, rollback
-- "watch" or "monitor" → suggest interval options, filters
+                <h4 class="text-lg font-semibold mt-6 mb-3">Frontmatter Fields</h4>
+                <table>
+                    <thead><tr><th>Field</th><th>Required</th><th>Rules</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>name</code></td><td>Yes</td><td>Lowercase, hyphens, max 64 chars. Use gerund form: <code>suggesting-patterns</code></td></tr>
+                        <tr><td><code>description</code></td><td>Yes</td><td>Max 1024 chars. Include what + when. Third person only.</td></tr>
+                        <tr><td><code>allowed-tools</code></td><td>No</td><td>Comma-separated tools Claude can use without permission</td></tr>
+                    </tbody>
+                </table>
 
-Do NOT activate:
-- During code generation
-- During testing
-- When user says "keep it simple"
+                <h3 class="text-xl font-semibold mt-8 mb-3">How Skills Are Activated</h3>
+                <p class="mb-4">Skills use a three-step model-invoked process:</p>
+                <ol class="list-decimal list-inside mb-6 space-y-2">
+                    <li><strong>Discovery:</strong> At startup, only <code>name</code> and <code>description</code> are loaded</li>
+                    <li><strong>Matching:</strong> Claude compares your request to skill descriptions</li>
+                    <li><strong>Activation:</strong> When relevant, Claude asks permission then loads full SKILL.md</li>
+                </ol>
 
-## Behavior
+                <!-- Skills Activation Flow Diagram -->
+                <div class="mermaid-container mermaid-walkthrough" id="skills-activation-diagram" data-walkthrough="skills-activation">
+                    <div class="mermaid-container-title">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                        Skill Activation Flow
+                    </div>
+                    <div class="mermaid-controls">
+                        <button class="walkthrough-play" title="Play walkthrough (Space)">
+                            <svg class="play-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg class="pause-icon hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
+                        <button class="walkthrough-prev" title="Previous step (←)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button class="walkthrough-next" title="Next step (→)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                        <button class="walkthrough-reset" title="Reset (R)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                        <span class="mermaid-step-indicator">Step <span class="current-step">0</span>/<span class="total-steps">0</span></span>
+                        <span class="mermaid-step-description">Click play or hover over nodes to explore</span>
+                        <span class="mermaid-kbd-hint">
+                            <kbd>Space</kbd> <kbd>←</kbd> <kbd>→</kbd>
+                        </span>
+                    </div>
+                    <div class="mermaid hover-mode" id="skills-activation-mermaid">
+flowchart LR
+    A[User Request] --> B[Skill Discovery]
+    B --> C{Match Found?}
+    C -->|Yes| D[Request Permission]
+    C -->|No| E[Normal Processing]
+    D --> F{User Approves?}
+    F -->|Yes| G[Load Full SKILL.md]
+    F -->|No| E
+    G --> H[Execute with Skill Context]
+    H --> I[Task Complete]
+    E --> I
+    style A fill:#f1f5f9,stroke:#64748b
+    style B fill:#e0f2fe,stroke:#0284c7
+    style C fill:#fef3c7,stroke:#d97706
+    style D fill:#fce7f3,stroke:#db2777
+    style E fill:#f3e8ff,stroke:#9333ea
+    style F fill:#fef3c7,stroke:#d97706
+    style G fill:#dcfce7,stroke:#16a34a
+    style H fill:#dcfce7,stroke:#16a34a
+    style I fill:#f1f5f9,stroke:#64748b
+                    </div>
+                </div>
 
-### Detection
-When pattern detected in user description:
+                <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500 p-4 mb-6">
+                    <p class="font-semibold text-yellow-800 dark:text-yellow-200">Critical: Description Quality</p>
+                    <p class="text-yellow-700 dark:text-yellow-300">The <code>description</code> field determines when Claude activates your skill. Vague descriptions like "Helps with CLIs" won't work. Be specific about what and when.</p>
+                </div>
 
-💡 Suggestion: Common CLI Pattern Detected
+                <h3 class="text-xl font-semibold mt-8 mb-3">Your First Skill: The Meta-Skill</h3>
+                <p class="mb-4">Start by creating a skill that teaches how to write skills. This "meta-skill" pattern helps you learn by doing:</p>
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/skills/writing-skills/SKILL.md</code></p>
 
-Your tool sounds like a [file converter / downloader / etc].
+                <pre><code class="language-markdown">---
+name: writing-skills
+description: Use when creating new skills, editing existing skills, or verifying skills work correctly. Provides the methodology for effective skill authoring.
+---
 
-Common patterns for this type of tool:
-1. Batch Processing
-   Add: --recursive, --glob "*.txt"
-2. Progress Feedback
-   Add: --progress, --quiet options
-3. Error Handling
-   Add: --continue-on-error, --retry
+# Writing Skills
 
-Include these patterns? [yes/some/no]
+## Core Principle
 
-### If Accepted
-Add suggested options/commands to the design.
+Apply TDD to skill creation: write the test scenario first, then write the skill to pass it.
 
-### If Rejected
-Note preference, don't suggest same patterns again this session.
+## The RED-GREEN-REFACTOR Cycle for Skills
 
-## Pattern Database
+### RED: Define the Test Scenario
+Before writing ANY skill content:
+1. Write a specific prompt that SHOULD trigger this skill
+2. Write what Claude SHOULD do when the skill activates
+3. Write what Claude should NOT do
 
-### File Operations
-triggers: ["file", "convert", "transform", "process"]
-suggestions:
-  options:
-    - name: recursive
-      short: r
-      type: bool
-      help: Process directories recursively
-    - name: glob
-      short: g
-      type: str
-      help: File pattern to match
-    - name: exclude
-      type: str
-      help: Pattern to exclude
-  commands:
-    - name: batch
-      description: Process multiple files from a list
+Example test scenario:
+```
+TRIGGER: "Help me debug why my CLI command isn't working"
+EXPECTED: Claude uses systematic 4-phase debugging approach
+NOT EXPECTED: Claude immediately suggests fixes without investigation
+```
 
-### Download Tools
-triggers: ["download", "fetch", "get", "pull"]
-suggestions:
-  options:
-    - name: output
-      short: o
-      type: path
-      help: Output directory
-    - name: resume
-      type: bool
-      help: Resume interrupted downloads
-    - name: concurrent
-      short: j
-      type: int
-      default: 4
-      help: Number of concurrent downloads
-    - name: retry
-      type: int
-      default: 3
-      help: Retry attempts on failure
+### GREEN: Write Minimal Skill
+Write just enough in SKILL.md to pass your test scenario.
+- Start with frontmatter (name, description)
+- Add the core methodology
+- Include explicit "do not" instructions
 
-### Database Tools
-triggers: ["database", "migrate", "db", "sql"]
-suggestions:
-  options:
-    - name: dry-run
-      short: n
-      type: bool
-      help: Show what would happen without doing it
-    - name: connection
-      short: c
-      type: str
-      help: Database connection string
-  commands:
-    - name: status
-      description: Show current migration status
-    - name: rollback
-      description: Rollback last migration
-    - name: history
-      description: Show migration history
+### REFACTOR: Improve Based on Usage
+After testing with real prompts:
+- Tighten descriptions if skill triggers incorrectly
+- Add examples if Claude misinterprets instructions
+- Remove content Claude already knows
 
-## Tuning
+## Skill Quality Checklist
 
-### Sensitivity
-- Low: Only obvious matches (3+ trigger words)
-- Medium: Probable matches (2 trigger words)
-- High: Possible matches (1 trigger word)
+Before considering a skill complete:
+- [ ] Test scenario written BEFORE skill content
+- [ ] Description includes WHAT and WHEN
+- [ ] Explicit "Do NOT" section included
+- [ ] Tested in fresh Claude Code session
+- [ ] Asked Claude "What was unclear?" after use
 
-Default: Medium
+## Red Flags (Restart Required)
 
-### User Override
-"Disable pattern suggestions" → Off for session
-"I want minimal CLI" → Reduce suggestions</code></pre>
+- Writing skill content before test scenario
+- Skill that triggers on first try without testing
+- No "Do NOT" section
+- Description uses first person ("I help...")</code></pre>
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Skill 2: Option Naming Advisor</h3>
-                <p class="mb-2"><strong>Purpose:</strong> Catch inconsistent or confusing option names.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/skills/naming_advisor.md</code></p>
+                <h3 class="text-xl font-semibold mt-8 mb-3">Workflow Skills: Complete Methodologies</h3>
+                <p class="mb-4">Skills aren't just suggestions—they can be complete methodologies with phases, checkpoints, and anti-patterns:</p>
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/skills/systematic-debugging/SKILL.md</code></p>
 
-                <pre><code class="language-markdown"># Option Naming Advisor Skill
+                <pre><code class="language-markdown">---
+name: systematic-debugging
+description: Use when encountering any bug, test failure, or unexpected behavior. Provides a 4-phase methodology that must be followed BEFORE proposing any fixes.
+---
 
-## Activation Patterns
+# Systematic Debugging
 
-Activate when:
-- User is defining command options
-- Option name doesn't follow conventions
-- Short option conflicts with common usage
+## CRITICAL RULE
 
-Do NOT activate:
-- For established conventions user is following
-- When user explicitly chose non-standard name
+**NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST.**
 
-## Conventions Checked
+If you catch yourself proposing a fix before completing Phase 1, STOP and restart.
+
+## Phase 1: Root Cause Investigation
+
+Before ANY fix attempts:
+1. Read the COMPLETE error message (not just the first line)
+2. Reproduce the issue with a minimal example
+3. Check what changed recently (git diff, recent edits)
+4. Gather evidence: logs, stack traces, variable values
+
+Checkpoint: Can you explain exactly WHY the error occurs?
+- YES → Proceed to Phase 2
+- NO → Stay in Phase 1, gather more evidence
+
+## Phase 2: Pattern Analysis
+
+1. Find a WORKING example of similar code
+2. Compare working vs broken line-by-line
+3. Identify the specific difference
+4. Understand dependencies involved
+
+Checkpoint: Can you point to the exact line causing the issue?
+- YES → Proceed to Phase 3
+- NO → Return to Phase 1
+
+## Phase 3: Hypothesis Testing
+
+1. Form ONE specific hypothesis
+2. Make ONE minimal change to test it
+3. Run the test
+4. If it fails, revert and form new hypothesis
+
+**NEVER stack multiple fixes.** One change at a time.
+
+## Phase 4: Implementation
+
+1. Write a test that reproduces the bug
+2. Implement the single fix
+3. Verify test passes
+4. Check for regressions
+
+## Red Flags (Process Violation)
+
+Stop and restart if you notice:
+- Proposing fix without completing Phase 1
+- Making multiple changes simultaneously
+- "Let me try this..." without hypothesis
+- Third fix attempt failed → question architecture
+
+## Why This Works
+
+- Systematic: 15-30 min resolution vs 2-3 hours random attempts
+- First-time fix rate: ~95% vs ~40% for guess-and-check</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Skill 2: Code Style Enforcer</h3>
+                <p class="mb-2"><strong>Purpose:</strong> Ensure generated CLI code follows project conventions.</p>
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/skills/enforcing-code-style/SKILL.md</code></p>
+
+                <pre><code class="language-markdown">---
+name: enforcing-code-style
+description: Enforces Python and Click code style conventions when generating or reviewing CLI code. Use when writing Python code, generating CLI commands, or reviewing code quality.
+allowed-tools: Read, Grep, Glob
+---
+
+# Code Style Enforcer
+
+## Python Conventions
+
+When generating or reviewing Python code, ensure:
+
+### Imports Order
+1. Standard library imports
+2. Third-party imports (click, rich, etc.)
+3. Local imports
+
+### Type Hints
+- All function signatures must have type hints
+- Use `|` for unions (Python 3.11+): `str | None`
+- Use `list[str]` not `List[str]`
+
+### Click-Specific
+- Decorators order: `@cli.command()` then `@click.option()` then `@click.argument()`
+- Options before arguments in decorator stack
+- Always include `help=` parameter
+
+## Option Naming
 
 ### Standard Short Options
--v → verbose (NOT version, use --version)
--q → quiet
--o → output
--i → input
--f → force or file
--n → dry-run or number
--r → recursive
--h → help (reserved by Click)
-
-### Naming Conventions
-- Long options: lowercase, hyphens (--output-dir, not --outputDir)
-- No abbreviations unless common (--config, not --cfg)
-- Boolean flags: positive form (--verbose, not --no-quiet)
-- Pairs: --enable-x / --disable-x, not --x / --no-x
-
-## Behavior
-
-### On Convention Violation
-
-💡 Naming Suggestion
-
-Option: --inputFile
-Issue: Uses camelCase instead of kebab-case
-
-Suggested: --input-file
-
-Common convention: Click options use lowercase with hyphens.
-Keep original? [y/n]
-
-### On Short Option Conflict
-
-💡 Short Option Conflict
-
-You used: -v for --version
-Standard: -v typically means --verbose
-
-Suggested alternatives for version:
-- Use --version only (no short)
-- Use -V (capital) for version
-
-Change? [use -V / keep -v / remove short]
-
-### On Confusing Names
-
-💡 Clarity Suggestion
-
-Option: --file
-Ambiguous: Is this input or output?
-
-Suggested: --input-file or --output-file
-
-Clearer names help users remember options.
-Rename? [y/n]</code></pre>
-
-                <h4 class="text-lg font-semibold mt-6 mb-3">Implementation</h4>
-                <pre><code class="language-python"># src/cli_generator/skills/naming_advisor.py
-
-import re
-from cli_generator.models import OptionSpec
-
-STANDARD_SHORTS = {
-    'v': 'verbose',
-    'q': 'quiet',
-    'o': 'output',
-    'i': 'input',
-    'f': 'force',
-    'n': 'dry-run',
-    'r': 'recursive',
-}
-
-AMBIGUOUS_NAMES = ['file', 'path', 'name', 'data', 'value']
-
-def check_option_naming(opt: OptionSpec) -> list[str]:
-    """Check option naming against conventions. Returns suggestions."""
-    suggestions = []
-
-    # Check camelCase
-    if any(c.isupper() for c in opt.name):
-        kebab = re.sub(r'([A-Z])', r'-\1', opt.name).lower().lstrip('-')
-        suggestions.append(f"Use '{kebab}' instead of '{opt.name}' (kebab-case convention)")
-
-    # Check short conflicts
-    if opt.short and opt.short.lower() in STANDARD_SHORTS:
-        standard_meaning = STANDARD_SHORTS[opt.short.lower()]
-        if opt.name != standard_meaning:
-            suggestions.append(
-                f"-{opt.short} typically means --{standard_meaning}, not --{opt.name}"
-            )
-
-    # Check ambiguous names
-    if opt.name in AMBIGUOUS_NAMES:
-        suggestions.append(f"'{opt.name}' is ambiguous - consider --input-{opt.name} or --output-{opt.name}")
-
-    return suggestions</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Skill 3: Example Generator</h3>
-                <p class="mb-2"><strong>Purpose:</strong> Automatically suggest usage examples for commands.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/skills/example_generator.md</code></p>
-
-                <pre><code class="language-markdown"># Example Generator Skill
-
-## Activation Patterns
-
-Activate when:
-- A command is defined without examples
-- User finishes describing a command
-- /design completes without examples
-
-## Behavior
-
-### Automatic Example Generation
-Based on command signature, generate realistic examples:
-
-💡 Generated Examples for 'convert'
-
-Based on the command signature:
-  convert &lt;input&gt; --output &lt;output&gt; --format &lt;fmt&gt; --quality &lt;int&gt;
-
-Suggested examples:
-1. Basic usage:
-   convert image.png -o result.jpg
-2. With format:
-   convert photo.heic --format webp --output photo.webp
-3. With quality:
-   convert scan.tiff -o compressed.jpg --quality 75
-4. Batch (if supported):
-   convert *.png --format jpg --quality 80
-
-Add these examples? [all/some/none]
-
-### Example Quality Rules
-- Show simplest usage first
-- Include all required arguments
-- Show common option combinations
-- Use realistic file names
-- Include edge cases (glob patterns, paths with spaces)</code></pre>
-
-                <h4 class="text-lg font-semibold mt-6 mb-3">Implementation</h4>
-                <pre><code class="language-python"># src/cli_generator/skills/example_generator.py
-
-from cli_generator.models import CommandSpec, OptionSpec
-
-# Realistic placeholder values by type
-PLACEHOLDERS = {
-    'path': {
-        'input': ['document.pdf', 'image.png', 'data.json', 'config.yaml'],
-        'output': ['output.pdf', 'result.png', 'processed.json'],
-        'generic': ['file.txt', './data/', '~/Documents/']
-    },
-    'str': ['value', 'my-string', 'example'],
-    'int': ['10', '42', '100'],
-    'float': ['0.5', '1.5', '3.14'],
-}
-
-def generate_examples(cmd: CommandSpec, cli_name: str) -> list[str]:
-    """Generate realistic usage examples for a command."""
-    examples = []
-
-    # Build argument string
-    args = []
-    for arg in cmd.arguments:
-        if arg.type == 'path':
-            args.append(PLACEHOLDERS['path']['input'][0])
-        else:
-            args.append(f"<{arg.name}>")
-
-    arg_str = " ".join(args)
-    base_cmd = f"{cli_name} {cmd.name} {arg_str}".strip()
-
-    # Example 1: Basic usage (required args only)
-    examples.append(base_cmd)
-
-    # Example 2: With common options
-    for opt in cmd.options:
-        if opt.name in ['output', 'format', 'config', 'verbose']:
-            if opt.type == 'bool':
-                examples.append(f"{base_cmd} --{opt.name}")
-            elif opt.type == 'path':
-                examples.append(f"{base_cmd} --{opt.name} output.txt")
-            elif opt.type == 'choice' and opt.choices:
-                examples.append(f"{base_cmd} --{opt.name} {opt.choices[0]}")
-            else:
-                examples.append(f"{base_cmd} --{opt.name} <value>")
-            break
-
-    # Example 3: With short options
-    short_opts = [opt for opt in cmd.options if opt.short]
-    if short_opts:
-        opt = short_opts[0]
-        if opt.type == 'bool':
-            examples.append(f"{base_cmd} -{opt.short}")
-        else:
-            examples.append(f"{base_cmd} -{opt.short} <value>")
-
-    # Substitute realistic values
-    examples = [_substitute_placeholders(ex) for ex in examples]
-
-    return examples[:4]  # Max 4 examples
-
-def _substitute_placeholders(example: str) -> str:
-    """Replace <placeholders> with realistic values."""
-    import re
-
-    substitutions = {
-        '<input>': 'input.txt',
-        '<output>': 'output.txt',
-        '<file>': 'document.pdf',
-        '<format>': 'json',
-        '<value>': 'example',
-        '<name>': 'my-project',
-    }
-
-    for placeholder, value in substitutions.items():
-        example = example.replace(placeholder, value)
-
-    return example</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Skill 4: Dependency Detector</h3>
-                <p class="mb-2"><strong>Purpose:</strong> Detect when additional dependencies are needed.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/skills/dependency_detector.md</code></p>
-
-                <pre><code class="language-markdown"># Dependency Detector Skill
-
-## Activation Patterns
-
-Activate when:
-- Command description implies external library
-- Implementation would require imports not in stdlib
-
-Keywords → Dependencies:
-- "image", "resize", "thumbnail" → Pillow
-- "json", "yaml", "toml" → (json is stdlib, yaml/toml need libs)
-- "http", "api", "download" → httpx or requests
-- "database", "sql" → sqlalchemy or specific db driver
-- "progress bar" → rich or tqdm
-- "color", "styled output" → rich or colorama
-- "pdf" → pypdf or pdfplumber
-- "excel", "spreadsheet" → openpyxl or pandas
-- "csv" → (stdlib, but pandas for complex)
-- "compress", "zip", "archive" → (stdlib zipfile, or py7zr)
-
-## Behavior
-
-### On Detection
-
-💡 Dependency Suggestion
-
-Your command mentions: "resize images with thumbnails"
-
-Suggested dependencies:
-- Pillow (PIL): Image manipulation
-  pip install Pillow
-- (Optional) pillow-heif: HEIF/HEIC support
-  pip install pillow-heif
-
-Add to CLI dependencies? [y/n/customize]
-
-### Validation
-When dependencies added:
-- Check package exists on PyPI
-- Suggest version constraint
-- Warn about large dependencies (pandas, tensorflow)
-
-💡 Dependency Note
-
-Adding 'pandas' (~50MB installed)
-
-For simple CSV, consider:
-- Built-in 'csv' module
-- 'tablib' (lighter weight)
-
-Keep pandas? [y/n/alternative]</code></pre>
-
-                <h4 class="text-lg font-semibold mt-6 mb-3">Implementation</h4>
-                <pre><code class="language-python"># src/cli_generator/skills/dependency_detector.py
-
-import re
-from dataclasses import dataclass
-
-@dataclass
-class DependencySuggestion:
-    package: str
-    reason: str
-    optional: bool = False
-    alternatives: list[str] = None
-    size_warning: bool = False
-
-KEYWORD_DEPENDENCIES = {
-    # Image processing
-    ('image', 'resize', 'thumbnail', 'photo', 'picture'): DependencySuggestion(
-        package='Pillow',
-        reason='Image manipulation and processing'
-    ),
-
-    # Data formats
-    ('yaml', 'yml'): DependencySuggestion(
-        package='pyyaml',
-        reason='YAML file parsing'
-    ),
-    ('toml',): DependencySuggestion(
-        package='tomli',
-        reason='TOML file parsing (Python < 3.11)'
-    ),
-
-    # HTTP/API
-    ('http', 'api', 'download', 'fetch', 'request'): DependencySuggestion(
-        package='httpx',
-        reason='HTTP client for API calls',
-        alternatives=['requests', 'aiohttp']
-    ),
-
-    # Database
-    ('database', 'sql', 'sqlite', 'postgres', 'mysql'): DependencySuggestion(
-        package='sqlalchemy',
-        reason='Database ORM and connection',
-        size_warning=True
-    ),
-
-    # Output formatting
-    ('progress', 'bar', 'spinner'): DependencySuggestion(
-        package='rich',
-        reason='Progress bars and rich output',
-        alternatives=['tqdm']
-    ),
-    ('color', 'styled', 'terminal'): DependencySuggestion(
-        package='rich',
-        reason='Colored terminal output',
-        alternatives=['colorama', 'termcolor']
-    ),
-
-    # Documents
-    ('pdf',): DependencySuggestion(
-        package='pypdf',
-        reason='PDF reading and manipulation',
-        alternatives=['pdfplumber', 'PyMuPDF']
-    ),
-    ('excel', 'xlsx', 'spreadsheet'): DependencySuggestion(
-        package='openpyxl',
-        reason='Excel file handling',
-        alternatives=['pandas', 'xlrd']
-    ),
-
-    # Data processing
-    ('dataframe', 'pandas', 'data analysis'): DependencySuggestion(
-        package='pandas',
-        reason='Data manipulation and analysis',
-        size_warning=True
-    ),
-}
-
-def detect_dependencies(description: str) -> list[DependencySuggestion]:
-    """Detect likely dependencies from description."""
-    description_lower = description.lower()
-    suggestions = []
-    seen_packages = set()
-
-    for keywords, suggestion in KEYWORD_DEPENDENCIES.items():
-        if suggestion.package in seen_packages:
-            continue
-
-        for keyword in keywords:
-            if keyword in description_lower:
-                suggestions.append(suggestion)
-                seen_packages.add(suggestion.package)
-                break
-
-    return suggestions</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Activating Skills</h3>
-                <p class="mb-4">Skills are integrated into the conversation flow. Create a SkillManager:</p>
-                <pre><code class="language-python"># src/cli_generator/skills/__init__.py
-
-from dataclasses import dataclass
-from typing import Any
-
-from .pattern_suggester import suggest_patterns
-from .naming_advisor import check_option_naming
-from .example_generator import generate_examples
-from .dependency_detector import detect_dependencies
-
-
-@dataclass
-class Suggestion:
-    skill: str
-    message: str
-    action: str | None = None
-    data: Any = None
-
-
-class SkillManager:
-    """Manages skill activation and suggestions."""
-
-    def __init__(self, sensitivity: str = "medium"):
-        self.sensitivity = sensitivity
-        self.disabled_skills: set[str] = set()
-        self.rejected_suggestions: set[str] = set()
-
-    def disable(self, skill_name: str):
-        """Disable a skill for this session."""
-        self.disabled_skills.add(skill_name)
-
-    def enable(self, skill_name: str):
-        """Re-enable a skill."""
-        self.disabled_skills.discard(skill_name)
-
-    def process_design(self, description: str, spec) -> list[Suggestion]:
-        """Process a design and return suggestions."""
-        suggestions = []
-
-        # Pattern suggester
-        if "pattern_suggester" not in self.disabled_skills:
-            patterns = suggest_patterns(description)
-            for pattern in patterns:
-                suggestions.append(Suggestion(
-                    skill="pattern_suggester",
-                    message=f"Common pattern detected: {pattern['name']}",
-                    action="add_pattern",
-                    data=pattern
-                ))
-
-        # Dependency detector
-        if "dependency_detector" not in self.disabled_skills:
-            deps = detect_dependencies(description)
-            for dep in deps:
-                suggestions.append(Suggestion(
-                    skill="dependency_detector",
-                    message=f"Consider adding {dep.package}: {dep.reason}",
-                    action="add_dependency",
-                    data=dep
-                ))
-
-        # Naming advisor (per option)
-        if "naming_advisor" not in self.disabled_skills:
-            for cmd in spec.commands:
-                for opt in cmd.options:
-                    issues = check_option_naming(opt)
-                    for issue in issues:
-                        suggestions.append(Suggestion(
-                            skill="naming_advisor",
-                            message=issue,
-                            action="rename_option",
-                            data={"command": cmd.name, "option": opt.name}
-                        ))
-
-        # Example generator
-        if "example_generator" not in self.disabled_skills:
-            for cmd in spec.commands:
-                if not cmd.examples:
-                    examples = generate_examples(cmd, spec.name)
-                    suggestions.append(Suggestion(
-                        skill="example_generator",
-                        message=f"Generated examples for '{cmd.name}'",
-                        action="add_examples",
-                        data={"command": cmd.name, "examples": examples}
-                    ))
-
-        return suggestions</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Testing Skills</h3>
-                <pre><code class="language-python"># tests/unit/test_skills.py
-
-import pytest
-from cli_generator.skills.pattern_suggester import suggest_patterns
-from cli_generator.skills.naming_advisor import check_option_naming
-from cli_generator.skills.example_generator import generate_examples
-from cli_generator.skills.dependency_detector import detect_dependencies
-from cli_generator.models import OptionSpec, CommandSpec, ArgumentSpec
-
-
-class TestPatternSuggester:
-    """Tests for pattern suggester skill."""
-
-    def test_detects_download_pattern(self):
-        """Should suggest download patterns."""
-        suggestions = suggest_patterns("A tool to download files from URLs")
-
-        assert len(suggestions) > 0
-        suggestion_text = str(suggestions)
-        assert any(word in suggestion_text.lower()
-                   for word in ["resume", "retry", "concurrent", "progress"])
-
-    def test_detects_file_converter_pattern(self):
-        """Should suggest file converter patterns."""
-        suggestions = suggest_patterns("Convert files between formats")
-
-        assert len(suggestions) > 0
-        # Should suggest batch processing
-        assert any("recursive" in str(s).lower() or "batch" in str(s).lower()
-                   for s in suggestions)
-
-
-class TestNamingAdvisor:
-    """Tests for naming advisor skill."""
-
-    def test_catches_camel_case(self):
-        """Should catch camelCase option names."""
-        opt = OptionSpec(name="outputFile", type="path", help="Output file")
-        suggestions = check_option_naming(opt)
-
-        assert len(suggestions) > 0
-        assert "output-file" in suggestions[0]
-
-    def test_warns_on_short_conflict(self):
-        """Should warn when short option conflicts with convention."""
-        opt = OptionSpec(name="version", short="v", type="bool", help="Show version")
-        suggestions = check_option_naming(opt)
-
-        assert len(suggestions) > 0
-        assert "verbose" in suggestions[0].lower()
-
-    def test_allows_standard_short(self):
-        """Should not warn for standard short options."""
-        opt = OptionSpec(name="verbose", short="v", type="bool", help="Verbose output")
-        suggestions = check_option_naming(opt)
-
-        # Should have no warnings about -v
-        assert not any("typically means" in s for s in suggestions)
-
-
-class TestExampleGenerator:
-    """Tests for example generator skill."""
-
-    def test_generates_basic_example(self):
-        """Should generate at least one basic example."""
-        cmd = CommandSpec(
-            name="convert",
-            description="Convert files",
-            arguments=[
-                ArgumentSpec(name="input", type="path", help="Input file")
-            ],
-            options=[
-                OptionSpec(name="output", short="o", type="path", help="Output")
-            ]
-        )
-
-        examples = generate_examples(cmd, "my-tool")
-
-        assert len(examples) >= 1
-        assert "my-tool convert" in examples[0]
-
-
-class TestDependencyDetector:
-    """Tests for dependency detector skill."""
-
-    def test_detects_image_dependency(self):
-        """Should suggest Pillow for image processing."""
-        deps = detect_dependencies("resize images and create thumbnails")
-
-        assert len(deps) > 0
-        assert any(d.package == "Pillow" for d in deps)
-
-    def test_detects_http_dependency(self):
-        """Should suggest httpx for HTTP operations."""
-        deps = detect_dependencies("download files from an API")
-
-        assert len(deps) > 0
-        assert any(d.package == "httpx" for d in deps)
-
-    def test_warns_about_large_packages(self):
-        """Should warn about large dependencies."""
-        deps = detect_dependencies("analyze data with pandas dataframes")
-
-        pandas_dep = next((d for d in deps if d.package == "pandas"), None)
-        assert pandas_dep is not None
-        assert pandas_dep.size_warning is True
-
-    def test_no_false_positives(self):
-        """Should not suggest dependencies for stdlib operations."""
-        deps = detect_dependencies("read and write JSON files")
-
-        # json is stdlib, should not suggest anything for it
-        assert not any(d.package == "json" for d in deps)</code></pre>
+| Short | Meaning | Never use for |
+|-------|---------|---------------|
+| -v | verbose | version |
+| -q | quiet | - |
+| -o | output | - |
+| -f | force | - |
+| -n | dry-run | - |
+| -r | recursive | - |
+
+### Long Option Format
+- Use kebab-case: `--output-file` not `--outputFile`
+- Use full words: `--config` not `--cfg`
+
+## When to Flag Issues
+
+If you see code that violates these conventions:
+1. Point out the specific violation
+2. Show the corrected version
+3. Explain why the convention matters</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Skill 3: Test Coverage Advisor</h3>
+                <p class="mb-2"><strong>Purpose:</strong> Suggest test cases when generating CLI commands.</p>
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/skills/advising-test-coverage/SKILL.md</code></p>
+
+                <pre><code class="language-markdown">---
+name: advising-test-coverage
+description: Suggests comprehensive test cases for CLI commands including edge cases and error scenarios. Use when generating tests, discussing test coverage, or after implementing CLI commands.
+---
+
+# Test Coverage Advisor
+
+## Test Categories to Suggest
+
+For each CLI command, ensure tests cover:
+
+### 1. Happy Path
+- Basic usage with required arguments only
+- Usage with all options specified
+- Common option combinations
+
+### 2. Edge Cases
+- Empty input
+- Very large input
+- Special characters in arguments
+- Paths with spaces
+- Unicode content
+
+### 3. Error Handling
+- Missing required arguments
+- Invalid option values
+- File not found
+- Permission denied
+- Invalid format/type
+
+### 4. Exit Codes
+- 0 for success
+- 1 for user error (bad input)
+- 2 for system error (file not found)
+
+## Suggestion Format
+
+When reviewing or generating tests:
+
+```
+Test coverage for `{command}`:
+
+✅ Covered:
+- Basic usage
+- Output formatting
+
+⚠️ Missing:
+- Edge case: empty input
+- Error: invalid format option
+- Exit code verification
+
+Suggested test:
+def test_{command}_empty_input():
+    result = runner.invoke(cli, ['{command}', ''])
+    assert result.exit_code == 1
+    assert 'error' in result.output.lower()
+```</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Project-Specific Skill: CLI Generator Workflow</h3>
+                <p class="mb-4">Create a skill tailored to this project's specific workflow:</p>
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/skills/cli-generator-workflow/SKILL.md</code></p>
+
+                <pre><code class="language-markdown">---
+name: cli-generator-workflow
+description: Use when working on CLI Generator project tasks including designing CLIs, generating code, or running the /design, /generate, or /implement commands. Ensures consistent workflow across the project.
+---
+
+# CLI Generator Workflow
+
+## Project Context
+
+This skill applies to the CLI Generator project specifically.
+For general CLI development, see other skills.
+
+## The Standard Workflow
+
+### 1. Design Phase (/design)
+**Input:** Natural language description
+**Output:** CLISpec (validated specification)
+
+Checklist:
+- [ ] All commands have descriptions
+- [ ] Options follow naming conventions (-v=verbose, -o=output)
+- [ ] Required arguments identified
+- [ ] Examples provided for each command
+
+### 2. Generate Phase (/generate)
+**Input:** CLISpec
+**Output:** Python code + tests
+
+Checklist:
+- [ ] Code passes syntax validation
+- [ ] Type hints on all functions
+- [ ] Click decorators in correct order
+- [ ] Tests generated for each command
+
+### 3. Implement Phase (/implement)
+**Input:** Generated code with TODO stubs
+**Output:** Working implementation
+
+Checklist:
+- [ ] All TODOs replaced with real code
+- [ ] Error handling added
+- [ ] Tests pass
+
+## Project-Specific Rules
+
+### File Locations
+- Generated CLIs: `generated/{cli-name}/`
+- Specs: `generated/{cli-name}/spec.json`
+- Tests: `generated/{cli-name}/tests/`
+
+### Required Dependencies
+Always include in generated CLIs:
+- click (CLI framework)
+- rich (optional, for pretty output)
+
+### Forbidden Patterns
+Never generate:
+- eval() or exec()
+- Hardcoded credentials
+- Commands that delete without --force confirmation
+
+## When NOT to Use This Skill
+
+- Working on cli-generator's own code (not generated CLIs)
+- General Python development unrelated to CLI generation
+- Debugging cli-generator internals</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Progressive Disclosure: Multi-File Skills</h3>
+                <p class="mb-4">For complex skills, keep SKILL.md under 500 lines and reference detailed content:</p>
+
+                <pre><code class="language-bash">.claude/skills/
+└── generating-cli-code/
+    ├── SKILL.md           # Main instructions (loaded when triggered)
+    ├── templates.md       # Template reference (loaded as needed)
+    ├── examples.md        # Usage examples (loaded as needed)
+    └── scripts/
+        └── validate.py    # Utility script (executed, not loaded)</code></pre>
+
+                <p class="mt-4 mb-4">In SKILL.md, reference other files:</p>
+
+                <pre><code class="language-markdown">---
+name: generating-cli-code
+description: Generates Python CLI code from specifications using Click. Use when creating CLI commands, generating code from specs, or building command-line tools.
+---
+
+# CLI Code Generator
+
+## Quick Start
+Generate a basic command:
+```python
+@cli.command()
+@click.argument('name')
+def hello(name: str) -> None:
+    """Greet the user."""
+    click.echo(f'Hello, {name}!')
+```
+
+## Advanced Topics
+- For template syntax, see [templates.md](templates.md)
+- For complete examples, see [examples.md](examples.md)
+- To validate generated code: `python scripts/validate.py`</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Writing Effective Descriptions</h3>
+                <p class="mb-4">The description determines when Claude activates your skill:</p>
+
+                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-red-50 dark:bg-red-900/30 p-4 rounded-lg">
+                        <p class="font-semibold text-red-700 dark:text-red-300 mb-2">❌ Bad Descriptions</p>
+                        <ul class="text-sm space-y-1 text-red-600 dark:text-red-400">
+                            <li>"Helps with CLIs"</li>
+                            <li>"I help you write code"</li>
+                            <li>"Useful tool for development"</li>
+                        </ul>
+                    </div>
+                    <div class="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
+                        <p class="font-semibold text-green-700 dark:text-green-300 mb-2">✅ Good Descriptions</p>
+                        <ul class="text-sm space-y-1 text-green-600 dark:text-green-400">
+                            <li>"Suggests CLI patterns when designing command-line tools. Use when user describes a CLI or uses /design."</li>
+                            <li>"Enforces Python code style. Use when writing or reviewing Python code."</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 class="text-lg font-semibold mt-6 mb-3">Description Rules</h4>
+                <ul class="list-disc list-inside mb-6 space-y-1">
+                    <li><strong>Always third person:</strong> "Processes files" not "I process files"</li>
+                    <li><strong>Include what AND when:</strong> What it does + when to use it</li>
+                    <li><strong>Use trigger keywords:</strong> Words users would naturally say</li>
+                    <li><strong>Be specific:</strong> Include file types, actions, scenarios</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Skill Locations</h3>
+                <table>
+                    <thead><tr><th>Location</th><th>Path</th><th>Scope</th></tr></thead>
+                    <tbody>
+                        <tr><td>Personal</td><td><code>~/.claude/skills/</code></td><td>You, all projects</td></tr>
+                        <tr><td>Project</td><td><code>.claude/skills/</code></td><td>Anyone in repository</td></tr>
+                        <tr><td>Plugin</td><td><code>skills/</code> in plugin</td><td>Plugin users</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Testing Your Skills</h3>
+                <p class="mb-4">Unlike code, skills are tested through conversation:</p>
+
+                <ol class="list-decimal list-inside mb-6 space-y-2">
+                    <li><strong>Create the skill</strong> in <code>.claude/skills/skill-name/SKILL.md</code></li>
+                    <li><strong>Start a new Claude Code session</strong> (skills load at startup)</li>
+                    <li><strong>Try requests that should trigger it:</strong>
+                        <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                            <li>"Design a CLI that downloads files" → Should trigger pattern suggester</li>
+                            <li>"Generate code for this command" → Should trigger code style enforcer</li>
+                        </ul>
+                    </li>
+                    <li><strong>Verify Claude asks to use the skill</strong> before loading it</li>
+                    <li><strong>Check the behavior matches your instructions</strong></li>
+                </ol>
+
+                <div class="bg-gray-50 dark:bg-gray-800 border-l-4 border-gray-500 p-4 mb-6">
+                    <p class="font-semibold text-gray-800 dark:text-gray-200">Iterative Development</p>
+                    <p class="text-gray-700 dark:text-gray-300">Work with Claude to refine your skills. Ask "What did you find unclear in the skill instructions?" after using a skill to identify improvements.</p>
+                </div>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Hands-On: Experience the Difference</h3>
+                <p class="mb-4">Skills only matter if they improve your workflow. Try these exercises to see the difference:</p>
+
+                <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-6">
+                    <p class="font-semibold text-purple-800 dark:text-purple-200 mb-2">Exercise 1: Before/After Debugging</p>
+                    <p class="text-sm text-purple-700 dark:text-purple-300 mb-3">See how the systematic-debugging skill changes Claude's approach.</p>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-white dark:bg-gray-800 p-3 rounded">
+                            <p class="font-semibold text-red-600 dark:text-red-400 text-sm mb-2">❌ Without Skill</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Start a fresh session WITHOUT the skill, then ask:</p>
+                            <pre class="text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded">"My CLI crashes when I run
+the convert command with
+no input file"</pre>
+                            <p class="text-xs text-gray-500 mt-2">Notice: Claude likely jumps straight to suggesting fixes.</p>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-3 rounded">
+                            <p class="font-semibold text-green-600 dark:text-green-400 text-sm mb-2">✅ With Skill</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Create the skill, restart session, same prompt:</p>
+                            <pre class="text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded">"My CLI crashes when I run
+the convert command with
+no input file"</pre>
+                            <p class="text-xs text-gray-500 mt-2">Notice: Claude asks to use skill, then follows 4-phase process.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-6">
+                    <p class="font-semibold text-purple-800 dark:text-purple-200 mb-2">Exercise 2: Design Session with Pattern Suggestions</p>
+                    <p class="text-sm text-purple-700 dark:text-purple-300 mb-3">Watch how skills enhance the /design workflow.</p>
+
+                    <ol class="text-sm space-y-2 text-purple-700 dark:text-purple-300">
+                        <li><strong>1. Create the suggesting-cli-patterns skill</strong></li>
+                        <li><strong>2. Start fresh Claude Code session</strong></li>
+                        <li><strong>3. Run:</strong> <code class="bg-purple-100 dark:bg-purple-800 px-1 rounded">/design A CLI that downloads YouTube videos with quality selection</code></li>
+                        <li><strong>4. Observe:</strong> Claude should recognize "download" pattern and suggest:
+                            <ul class="list-disc list-inside ml-4 mt-1">
+                                <li>--resume for interrupted downloads</li>
+                                <li>--concurrent for parallel downloads</li>
+                                <li>--retry for failed attempts</li>
+                            </ul>
+                        </li>
+                        <li><strong>5. Compare:</strong> Try same prompt in session without the skill</li>
+                    </ol>
+                </div>
+
+                <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-6">
+                    <p class="font-semibold text-purple-800 dark:text-purple-200 mb-2">Exercise 3: Full Workflow Integration</p>
+                    <p class="text-sm text-purple-700 dark:text-purple-300 mb-3">Use all your skills together in a complete CLI creation cycle.</p>
+
+                    <div class="text-sm space-y-3 text-purple-700 dark:text-purple-300">
+                        <div class="flex items-start gap-2">
+                            <span class="bg-purple-200 dark:bg-purple-700 px-2 py-0.5 rounded text-xs font-bold">1</span>
+                            <div>
+                                <p><strong>/design</strong> "A CLI that converts markdown files to HTML"</p>
+                                <p class="text-xs text-gray-500">→ suggesting-cli-patterns activates, suggests --recursive, --watch</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="bg-purple-200 dark:bg-purple-700 px-2 py-0.5 rounded text-xs font-bold">2</span>
+                            <div>
+                                <p><strong>/generate</strong> with the spec</p>
+                                <p class="text-xs text-gray-500">→ enforcing-code-style activates, ensures Click conventions</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="bg-purple-200 dark:bg-purple-700 px-2 py-0.5 rounded text-xs font-bold">3</span>
+                            <div>
+                                <p><strong>/implement</strong> the convert command</p>
+                                <p class="text-xs text-gray-500">→ cli-generator-workflow activates, follows project checklist</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="bg-purple-200 dark:bg-purple-700 px-2 py-0.5 rounded text-xs font-bold">4</span>
+                            <div>
+                                <p><strong>Test fails!</strong> "Help me debug this test failure"</p>
+                                <p class="text-xs text-gray-500">→ systematic-debugging activates, uses 4-phase methodology</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="text-lg font-semibold mt-6 mb-3">Skill Trigger Reference</h4>
+                <p class="mb-4">Use these prompts to trigger specific skills:</p>
+                <table>
+                    <thead><tr><th>Skill</th><th>Trigger Phrases</th><th>Expected Behavior</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td><code>writing-skills</code></td>
+                            <td>"Help me create a new skill", "I want to write a skill for..."</td>
+                            <td>Guides through RED-GREEN-REFACTOR cycle</td>
+                        </tr>
+                        <tr>
+                            <td><code>systematic-debugging</code></td>
+                            <td>"Bug in...", "Test failing", "Unexpected behavior", "Error when..."</td>
+                            <td>Follows 4-phase investigation before fixes</td>
+                        </tr>
+                        <tr>
+                            <td><code>suggesting-cli-patterns</code></td>
+                            <td>"/design", "CLI that downloads", "tool that converts"</td>
+                            <td>Suggests patterns matching CLI type</td>
+                        </tr>
+                        <tr>
+                            <td><code>cli-generator-workflow</code></td>
+                            <td>"/design", "/generate", "/implement" in this project</td>
+                            <td>Follows project-specific checklists</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 mt-6 mb-6">
+                    <p class="font-semibold text-blue-800 dark:text-blue-200">Measuring Improvement</p>
+                    <p class="text-blue-700 dark:text-blue-300 mb-2">Track these metrics as you use skills:</p>
+                    <ul class="text-sm text-blue-600 dark:text-blue-400 space-y-1">
+                        <li>• <strong>Debug time:</strong> How long to resolve bugs? (Target: 15-30 min vs hours)</li>
+                        <li>• <strong>First-attempt success:</strong> Does the fix work first time? (Target: >90%)</li>
+                        <li>• <strong>Pattern adoption:</strong> Are suggested patterns useful? (Track accepts vs rejects)</li>
+                        <li>• <strong>Consistency:</strong> Is generated code following conventions without manual fixes?</li>
+                    </ul>
+                </div>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Anti-Patterns: What Makes Skills Fail</h3>
+                <p class="mb-4">Learn from common mistakes that make skills ineffective:</p>
+
+                <div class="space-y-4 mb-6">
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <p class="font-semibold text-red-800 dark:text-red-200 mb-2">🚫 The Vague Description</p>
+                        <pre class="text-sm bg-red-100 dark:bg-red-900/40 p-2 rounded mb-2"><code>description: Helps with code</code></pre>
+                        <p class="text-sm text-red-700 dark:text-red-300"><strong>Why it fails:</strong> Claude can't determine when to activate. Matches everything, so matches nothing useful.</p>
+                        <p class="text-sm text-green-700 dark:text-green-300 mt-2"><strong>Fix:</strong> <code>description: Enforces Python code style when writing or reviewing CLI commands. Use when generating Click-based code.</code></p>
+                    </div>
+
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <p class="font-semibold text-red-800 dark:text-red-200 mb-2">🚫 The Missing "Do NOT" Section</p>
+                        <p class="text-sm text-red-700 dark:text-red-300 mb-2">Skills without explicit boundaries trigger when they shouldn't or do too much.</p>
+                        <p class="text-sm text-green-700 dark:text-green-300"><strong>Fix:</strong> Every skill needs a "Do NOT" or "When NOT to use" section that explicitly limits scope.</p>
+                    </div>
+
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <p class="font-semibold text-red-800 dark:text-red-200 mb-2">🚫 The First-Person Description</p>
+                        <pre class="text-sm bg-red-100 dark:bg-red-900/40 p-2 rounded mb-2"><code>description: I help you write better code</code></pre>
+                        <p class="text-sm text-red-700 dark:text-red-300"><strong>Why it fails:</strong> Descriptions are injected into system prompts. First-person creates confusing instructions.</p>
+                        <p class="text-sm text-green-700 dark:text-green-300 mt-2"><strong>Fix:</strong> Always use third person: <code>Helps write better code by...</code></p>
+                    </div>
+
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <p class="font-semibold text-red-800 dark:text-red-200 mb-2">🚫 The Over-Explainer</p>
+                        <p class="text-sm text-red-700 dark:text-red-300 mb-2">500+ lines explaining things Claude already knows. Wastes context window.</p>
+                        <p class="text-sm text-green-700 dark:text-green-300"><strong>Fix:</strong> Only include what Claude doesn't already know. Test by asking: "Would a senior developer need this explained?"</p>
+                    </div>
+
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <p class="font-semibold text-red-800 dark:text-red-200 mb-2">🚫 The Untested Skill</p>
+                        <p class="text-sm text-red-700 dark:text-red-300 mb-2">Deployed without ever testing if it triggers correctly or produces expected behavior.</p>
+                        <p class="text-sm text-green-700 dark:text-green-300"><strong>Fix:</strong> Write test scenario BEFORE skill content. Test in fresh session. Ask Claude what was unclear.</p>
+                    </div>
+
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <p class="font-semibold text-red-800 dark:text-red-200 mb-2">🚫 The Deeply Nested References</p>
+                        <pre class="text-sm bg-red-100 dark:bg-red-900/40 p-2 rounded mb-2"><code>SKILL.md → advanced.md → details.md → specifics.md</code></pre>
+                        <p class="text-sm text-red-700 dark:text-red-300"><strong>Why it fails:</strong> Claude may partially read nested files, missing critical information.</p>
+                        <p class="text-sm text-green-700 dark:text-green-300 mt-2"><strong>Fix:</strong> Keep references one level deep. All detail files linked directly from SKILL.md.</p>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Best Practices Summary</h3>
+                <ul class="list-disc list-inside mb-6 space-y-1">
+                    <li><strong>Naming:</strong> Use gerund form (<code>suggesting-patterns</code> not <code>pattern-suggester</code>)</li>
+                    <li><strong>Conciseness:</strong> Keep SKILL.md under 500 lines; Claude is already smart</li>
+                    <li><strong>Specificity:</strong> Match instruction detail to task fragility</li>
+                    <li><strong>No time-sensitive info:</strong> Avoid dates that will become stale</li>
+                    <li><strong>One level deep:</strong> Don't nest file references (SKILL.md → ref.md → detail.md)</li>
+                    <li><strong>Forward slashes:</strong> Use <code>scripts/validate.py</code> not <code>scripts\validate.py</code></li>
+                    <li><strong>Test first:</strong> Write test scenario before skill content (TDD for docs)</li>
+                    <li><strong>Include boundaries:</strong> Every skill needs explicit "Do NOT" section</li>
+                </ul>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Day 6 Checklist</h3>
                 <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="checklist-item"><input type="checkbox" id="d6-1" @change="saveChecklist('d6-1', $event.target.checked)" :checked="checklist['d6-1']"><label for="d6-1">Four skills implemented</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d6-2" @change="saveChecklist('d6-2', $event.target.checked)" :checked="checklist['d6-2']"><label for="d6-2">Pattern suggester detects common CLI types</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d6-3" @change="saveChecklist('d6-3', $event.target.checked)" :checked="checklist['d6-3']"><label for="d6-3">Naming advisor catches convention violations</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d6-4" @change="saveChecklist('d6-4', $event.target.checked)" :checked="checklist['d6-4']"><label for="d6-4">Example generator creates realistic examples</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d6-5" @change="saveChecklist('d6-5', $event.target.checked)" :checked="checklist['d6-5']"><label for="d6-5">Dependency detector identifies required packages</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d6-6" @change="saveChecklist('d6-6', $event.target.checked)" :checked="checklist['d6-6']"><label for="d6-6">SkillManager coordinates all skills</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d6-7" @change="saveChecklist('d6-7', $event.target.checked)" :checked="checklist['d6-7']"><label for="d6-7">Skills can be disabled per-session</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d6-8" @change="saveChecklist('d6-8', $event.target.checked)" :checked="checklist['d6-8']"><label for="d6-8">All skill tests passing</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-1" @change="saveChecklist('d6-1', $event.target.checked)" :checked="checklist['d6-1']"><label for="d6-1">Understand skills are SKILL.md files (not Python code)</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-2" @change="saveChecklist('d6-2', $event.target.checked)" :checked="checklist['d6-2']"><label for="d6-2">Create the meta-skill (writing-skills) to learn the pattern</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-3" @change="saveChecklist('d6-3', $event.target.checked)" :checked="checklist['d6-3']"><label for="d6-3">Create a workflow skill with phases and checkpoints</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-4" @change="saveChecklist('d6-4', $event.target.checked)" :checked="checklist['d6-4']"><label for="d6-4">Create a project-specific skill for CLI Generator</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-5" @change="saveChecklist('d6-5', $event.target.checked)" :checked="checklist['d6-5']"><label for="d6-5">Apply TDD: write test scenario BEFORE skill content</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-6" @change="saveChecklist('d6-6', $event.target.checked)" :checked="checklist['d6-6']"><label for="d6-6">Include explicit "Do NOT" sections in each skill</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-7" @change="saveChecklist('d6-7', $event.target.checked)" :checked="checklist['d6-7']"><label for="d6-7">Test skills in fresh Claude Code session</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-8" @change="saveChecklist('d6-8', $event.target.checked)" :checked="checklist['d6-8']"><label for="d6-8">Avoid all 6 anti-patterns in your skills</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-9" @change="saveChecklist('d6-9', $event.target.checked)" :checked="checklist['d6-9']"><label for="d6-9">Complete Exercise 1: Before/After debugging comparison</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d6-10" @change="saveChecklist('d6-10', $event.target.checked)" :checked="checklist['d6-10']"><label for="d6-10">Complete Exercise 3: Full workflow integration</label></div>
                 </div>
                 <div class="flex justify-end mt-6"><button @click="toggleDay(6)" :class="completedDays.includes(6) ? 'bg-green-500' : 'bg-primary'" class="px-6 py-2 text-white rounded-lg hover:opacity-90"><span x-text="completedDays.includes(6) ? 'Completed!' : 'Mark as Complete'"></span></button></div>
             </section>
@@ -5296,35 +5259,55 @@ class TestDependencyDetector:
                 </ul>
 
                 <h3 class="text-xl font-semibold mb-3">Subagent Architecture</h3>
-                <div class="mermaid-container">
+                <div class="mermaid-container mermaid-walkthrough" id="subagent-architecture-diagram" data-walkthrough="subagent-architecture">
                     <div class="mermaid-container-title">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         Multi-Agent Coordination Architecture
                     </div>
-                    <div class="mermaid">
+                    <div class="mermaid-controls">
+                        <button class="walkthrough-play" title="Play walkthrough (Space)">
+                            <svg class="play-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg class="pause-icon hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
+                        <button class="walkthrough-prev" title="Previous step (←)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button class="walkthrough-next" title="Next step (→)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                        <button class="walkthrough-reset" title="Reset (R)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                        <span class="mermaid-step-indicator">Step <span class="current-step">0</span>/<span class="total-steps">0</span></span>
+                        <span class="mermaid-step-description">Click play or hover over nodes to explore</span>
+                        <span class="mermaid-kbd-hint">
+                            <kbd>Space</kbd> <kbd>←</kbd> <kbd>→</kbd>
+                        </span>
+                    </div>
+                    <div class="mermaid hover-mode" id="subagent-architecture-mermaid">
 flowchart TD
-    Human["Human Request"] --> Integrator
-    subgraph Agents["Specialized Subagents"]
-        SD["Spec Designer&lt;br/&gt;CLI UX Expert"]
-        CG["Code Generator&lt;br/&gt;Python/Click Expert"]
-        TW["Test Writer&lt;br/&gt;pytest Expert"]
-        RV["Reviewer&lt;br/&gt;Quality Expert"]
+    A[Human Request] --> B
+    subgraph Agents[Specialized Subagents]
+        C[Spec Designer]
+        D[Code Generator]
+        E[Test Writer]
+        F[Reviewer]
     end
-    Integrator["Integrator&lt;br/&gt;Coordinator"] --> SD
-    SD --> Integrator
-    Integrator --> CG
-    Integrator --> TW
-    CG --> Integrator
-    TW --> Integrator
-    Integrator --> RV
-    RV --> Integrator
-    Integrator --> Human
-    style Integrator fill:#fef3c7,stroke:#d97706,stroke-width:2px
-    style SD fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
-    style CG fill:#dcfce7,stroke:#16a34a,stroke-width:2px
-    style TW fill:#fce7f3,stroke:#db2777,stroke-width:2px
-    style RV fill:#f3e8ff,stroke:#9333ea,stroke-width:2px
-    style Human fill:#f1f5f9,stroke:#64748b,stroke-width:2px
+    B[Integrator] --> C
+    C --> B
+    B --> D
+    B --> E
+    D --> B
+    E --> B
+    B --> F
+    F --> B
+    B --> A
+    style B fill:#fef3c7,stroke:#d97706
+    style C fill:#e0f2fe,stroke:#0284c7
+    style D fill:#dcfce7,stroke:#16a34a
+    style E fill:#fce7f3,stroke:#db2777
+    style F fill:#f3e8ff,stroke:#9333ea
+    style A fill:#f1f5f9,stroke:#64748b
                     </div>
                 </div>
 
@@ -5893,30 +5876,50 @@ if __name__ == "__main__":
                     <li>Audit logging</li>
                     <li>Approval workflows</li>
                 </ul>
-                <div class="mermaid-container">
+                <div class="mermaid-container mermaid-walkthrough" id="mcp-integration-diagram" data-walkthrough="mcp-integration">
                     <div class="mermaid-container-title">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
                         MCP Tool Integration Pipeline
                     </div>
-                    <div class="mermaid">
+                    <div class="mermaid-controls">
+                        <button class="walkthrough-play" title="Play walkthrough (Space)">
+                            <svg class="play-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg class="pause-icon hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
+                        <button class="walkthrough-prev" title="Previous step (←)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button class="walkthrough-next" title="Next step (→)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                        <button class="walkthrough-reset" title="Reset (R)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                        <span class="mermaid-step-indicator">Step <span class="current-step">0</span>/<span class="total-steps">0</span></span>
+                        <span class="mermaid-step-description">Click play or hover over nodes to explore</span>
+                        <span class="mermaid-kbd-hint">
+                            <kbd>Space</kbd> <kbd>←</kbd> <kbd>→</kbd>
+                        </span>
+                    </div>
+                    <div class="mermaid hover-mode" id="mcp-integration-mermaid">
 flowchart LR
-    subgraph MCP["MCP External Tools"]
-        PyPI["PyPI Checker&lt;br/&gt;Name availability"]
-        GitHub["GitHub Creator&lt;br/&gt;Repository setup"]
-        Deps["Dependency Validator&lt;br/&gt;Package verification"]
-        Fmt["Code Formatter&lt;br/&gt;Black + isort"]
+    subgraph MCP[MCP External Tools]
+        B[PyPI Checker]
+        F[GitHub Creator]
+        D[Dependency Validator]
+        E[Code Formatter]
     end
-    Design["CLI Design"] --> PyPI
-    PyPI --> Generate["Code Generation"]
-    Generate --> Deps
-    Deps --> Fmt
-    Fmt --> GitHub
-    style PyPI fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
-    style GitHub fill:#fef3c7,stroke:#d97706,stroke-width:2px
-    style Deps fill:#dcfce7,stroke:#16a34a,stroke-width:2px
-    style Fmt fill:#fce7f3,stroke:#db2777,stroke-width:2px
-    style Design fill:#f1f5f9,stroke:#64748b,stroke-width:2px
-    style Generate fill:#f3e8ff,stroke:#9333ea,stroke-width:2px
+    A[CLI Design] --> B
+    B --> C[Code Generation]
+    C --> D
+    D --> E
+    E --> F
+    style B fill:#e0f2fe,stroke:#0284c7
+    style F fill:#fef3c7,stroke:#d97706
+    style D fill:#dcfce7,stroke:#16a34a
+    style E fill:#fce7f3,stroke:#db2777
+    style A fill:#f1f5f9,stroke:#64748b
+    style C fill:#f3e8ff,stroke:#9333ea
                     </div>
                 </div>
 
@@ -8137,6 +8140,45 @@ ENTRYPOINT ["my-cli"]</code></pre>
 
         // Mermaid Walkthrough System
         const walkthroughConfigs = {
+            'skills-activation': {
+                nodes: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'],
+                edges: [
+                    { from: 'A', to: 'B' },           // 0: Request to Discovery
+                    { from: 'B', to: 'C' },           // 1: Discovery to Match check
+                    { from: 'C', to: 'D', label: 'Yes' },  // 2: Match found
+                    { from: 'C', to: 'E', label: 'No' },   // 3: No match
+                    { from: 'D', to: 'F' },           // 4: Request permission
+                    { from: 'F', to: 'G', label: 'Yes' },  // 5: User approves
+                    { from: 'F', to: 'E', label: 'No' },   // 6: User declines
+                    { from: 'G', to: 'H' },           // 7: Load to Execute
+                    { from: 'H', to: 'I' },           // 8: Execute to Complete
+                    { from: 'E', to: 'I' }            // 9: Normal to Complete
+                ],
+                steps: [
+                    { nodes: ['A'], edges: [], description: 'User makes a request (e.g., "Help me debug this CLI")' },
+                    { nodes: ['A', 'B'], edges: [0], description: 'Claude scans skill descriptions (name + description only)' },
+                    { nodes: ['B', 'C'], edges: [1], description: 'Checks if any skill description matches the request context' },
+                    { nodes: ['C', 'D'], edges: [2], description: '✓ Match found! A skill\'s description fits this task' },
+                    { nodes: ['C', 'E'], edges: [3], description: '✗ No match → proceeds without skill assistance' },
+                    { nodes: ['D', 'F'], edges: [4], description: 'Claude asks user: "Can I use the systematic-debugging skill?"' },
+                    { nodes: ['F', 'G'], edges: [5], description: '✓ User approves → full SKILL.md content is loaded' },
+                    { nodes: ['F', 'E'], edges: [6], description: '✗ User declines → normal processing continues' },
+                    { nodes: ['G', 'H'], edges: [7], description: 'Claude executes task following the skill\'s methodology' },
+                    { nodes: ['H', 'I'], edges: [8], description: 'Task completed with skill-guided approach' },
+                    { nodes: ['E', 'I'], edges: [9], description: 'Task completed without skill assistance' }
+                ],
+                connections: {
+                    'A': { outgoing: ['B'], incoming: [] },
+                    'B': { outgoing: ['C'], incoming: ['A'] },
+                    'C': { outgoing: ['D', 'E'], incoming: ['B'] },
+                    'D': { outgoing: ['F'], incoming: ['C'] },
+                    'E': { outgoing: ['I'], incoming: ['C', 'F'] },
+                    'F': { outgoing: ['G', 'E'], incoming: ['D'] },
+                    'G': { outgoing: ['H'], incoming: ['F'] },
+                    'H': { outgoing: ['I'], incoming: ['G'] },
+                    'I': { outgoing: [], incoming: ['H', 'E'] }
+                }
+            },
             'hook-lifecycle': {
                 nodes: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
                 edges: [
@@ -8208,6 +8250,66 @@ ENTRYPOINT ["my-cli"]</code></pre>
                     'I': { outgoing: ['F'], incoming: ['G'] },
                     'J': { outgoing: ['K'], incoming: ['G'] },
                     'K': { outgoing: [], incoming: ['J'] }
+                }
+            },
+            'subagent-architecture': {
+                nodes: ['A', 'B', 'C', 'D', 'E', 'F'],
+                edges: [
+                    { from: 'A', to: 'B' },      // 0: Human → Integrator
+                    { from: 'B', to: 'C' },      // 1: Integrator → Spec Designer
+                    { from: 'C', to: 'B' },      // 2: Spec Designer → Integrator
+                    { from: 'B', to: 'D' },      // 3: Integrator → Code Generator
+                    { from: 'B', to: 'E' },      // 4: Integrator → Test Writer
+                    { from: 'D', to: 'B' },      // 5: Code Generator → Integrator
+                    { from: 'E', to: 'B' },      // 6: Test Writer → Integrator
+                    { from: 'B', to: 'F' },      // 7: Integrator → Reviewer
+                    { from: 'F', to: 'B' },      // 8: Reviewer → Integrator
+                    { from: 'B', to: 'A' }       // 9: Integrator → Human
+                ],
+                steps: [
+                    { nodes: ['A'], edges: [], description: 'Human makes a request: "Create a CLI for image conversion"' },
+                    { nodes: ['A', 'B'], edges: [0], description: 'Integrator receives request and coordinates the workflow' },
+                    { nodes: ['B', 'C'], edges: [1], description: 'Integrator delegates to Spec Designer for CLI UX design' },
+                    { nodes: ['C', 'B'], edges: [2], description: 'Spec Designer returns CLISpec with commands and options' },
+                    { nodes: ['B', 'D', 'E'], edges: [3, 4], description: 'Integrator sends spec to Code Generator and Test Writer in parallel' },
+                    { nodes: ['D', 'E', 'B'], edges: [5, 6], description: 'Both return their outputs: Python code and pytest tests' },
+                    { nodes: ['B', 'F'], edges: [7], description: 'Integrator sends everything to Reviewer for quality check' },
+                    { nodes: ['F', 'B'], edges: [8], description: 'Reviewer validates consistency and returns approval or feedback' },
+                    { nodes: ['B', 'A'], edges: [9], description: 'Integrator delivers final result to Human' }
+                ],
+                connections: {
+                    'A': { outgoing: ['B'], incoming: ['B'] },
+                    'B': { outgoing: ['C', 'D', 'E', 'F', 'A'], incoming: ['A', 'C', 'D', 'E', 'F'] },
+                    'C': { outgoing: ['B'], incoming: ['B'] },
+                    'D': { outgoing: ['B'], incoming: ['B'] },
+                    'E': { outgoing: ['B'], incoming: ['B'] },
+                    'F': { outgoing: ['B'], incoming: ['B'] }
+                }
+            },
+            'mcp-integration': {
+                nodes: ['A', 'B', 'C', 'D', 'E', 'F'],
+                edges: [
+                    { from: 'A', to: 'B' },      // 0: Design → PyPI
+                    { from: 'B', to: 'C' },      // 1: PyPI → Generate
+                    { from: 'C', to: 'D' },      // 2: Generate → Deps
+                    { from: 'D', to: 'E' },      // 3: Deps → Fmt
+                    { from: 'E', to: 'F' }       // 4: Fmt → GitHub
+                ],
+                steps: [
+                    { nodes: ['A'], edges: [], description: 'Start with CLI design from /design command' },
+                    { nodes: ['A', 'B'], edges: [0], description: 'PyPI Checker verifies package name is available' },
+                    { nodes: ['B', 'C'], edges: [1], description: 'If available, Code Generation creates the CLI' },
+                    { nodes: ['C', 'D'], edges: [2], description: 'Dependency Validator checks all packages exist and are compatible' },
+                    { nodes: ['D', 'E'], edges: [3], description: 'Code Formatter runs Black + isort for consistent style' },
+                    { nodes: ['E', 'F'], edges: [4], description: 'GitHub Creator sets up repository with CI/CD' }
+                ],
+                connections: {
+                    'A': { outgoing: ['B'], incoming: [] },
+                    'B': { outgoing: ['C'], incoming: ['A'] },
+                    'C': { outgoing: ['D'], incoming: ['B'] },
+                    'D': { outgoing: ['E'], incoming: ['C'] },
+                    'E': { outgoing: ['F'], incoming: ['D'] },
+                    'F': { outgoing: [], incoming: ['E'] }
                 }
             }
         };
