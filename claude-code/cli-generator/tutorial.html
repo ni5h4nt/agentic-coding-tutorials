@@ -5259,21 +5259,41 @@ no input file"</pre>
                 </ul>
 
                 <h3 class="text-xl font-semibold mb-3">Subagent Architecture</h3>
-                <div class="mermaid-container">
+                <div class="mermaid-container mermaid-walkthrough" id="subagent-architecture-diagram" data-walkthrough="subagent-architecture">
                     <div class="mermaid-container-title">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         Multi-Agent Coordination Architecture
                     </div>
-                    <div class="mermaid">
+                    <div class="mermaid-controls">
+                        <button class="walkthrough-play" title="Play walkthrough (Space)">
+                            <svg class="play-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg class="pause-icon hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
+                        <button class="walkthrough-prev" title="Previous step (←)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button class="walkthrough-next" title="Next step (→)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                        <button class="walkthrough-reset" title="Reset (R)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                        <span class="mermaid-step-indicator">Step <span class="current-step">0</span>/<span class="total-steps">0</span></span>
+                        <span class="mermaid-step-description">Click play or hover over nodes to explore</span>
+                        <span class="mermaid-kbd-hint">
+                            <kbd>Space</kbd> <kbd>←</kbd> <kbd>→</kbd>
+                        </span>
+                    </div>
+                    <div class="mermaid hover-mode" id="subagent-architecture-mermaid">
 flowchart TD
-    Human["Human Request"] --> Integrator
-    subgraph Agents["Specialized Subagents"]
-        SD["Spec Designer&lt;br/&gt;CLI UX Expert"]
-        CG["Code Generator&lt;br/&gt;Python/Click Expert"]
-        TW["Test Writer&lt;br/&gt;pytest Expert"]
-        RV["Reviewer&lt;br/&gt;Quality Expert"]
+    Human[Human Request] --> Integrator
+    subgraph Agents[Specialized Subagents]
+        SD[Spec Designer]
+        CG[Code Generator]
+        TW[Test Writer]
+        RV[Reviewer]
     end
-    Integrator["Integrator&lt;br/&gt;Coordinator"] --> SD
+    Integrator[Integrator] --> SD
     SD --> Integrator
     Integrator --> CG
     Integrator --> TW
@@ -5282,12 +5302,12 @@ flowchart TD
     Integrator --> RV
     RV --> Integrator
     Integrator --> Human
-    style Integrator fill:#fef3c7,stroke:#d97706,stroke-width:2px
-    style SD fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
-    style CG fill:#dcfce7,stroke:#16a34a,stroke-width:2px
-    style TW fill:#fce7f3,stroke:#db2777,stroke-width:2px
-    style RV fill:#f3e8ff,stroke:#9333ea,stroke-width:2px
-    style Human fill:#f1f5f9,stroke:#64748b,stroke-width:2px
+    style Integrator fill:#fef3c7,stroke:#d97706
+    style SD fill:#e0f2fe,stroke:#0284c7
+    style CG fill:#dcfce7,stroke:#16a34a
+    style TW fill:#fce7f3,stroke:#db2777
+    style RV fill:#f3e8ff,stroke:#9333ea
+    style Human fill:#f1f5f9,stroke:#64748b
                     </div>
                 </div>
 
@@ -5856,30 +5876,50 @@ if __name__ == "__main__":
                     <li>Audit logging</li>
                     <li>Approval workflows</li>
                 </ul>
-                <div class="mermaid-container">
+                <div class="mermaid-container mermaid-walkthrough" id="mcp-integration-diagram" data-walkthrough="mcp-integration">
                     <div class="mermaid-container-title">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
                         MCP Tool Integration Pipeline
                     </div>
-                    <div class="mermaid">
+                    <div class="mermaid-controls">
+                        <button class="walkthrough-play" title="Play walkthrough (Space)">
+                            <svg class="play-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg class="pause-icon hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
+                        <button class="walkthrough-prev" title="Previous step (←)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button class="walkthrough-next" title="Next step (→)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                        <button class="walkthrough-reset" title="Reset (R)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                        <span class="mermaid-step-indicator">Step <span class="current-step">0</span>/<span class="total-steps">0</span></span>
+                        <span class="mermaid-step-description">Click play or hover over nodes to explore</span>
+                        <span class="mermaid-kbd-hint">
+                            <kbd>Space</kbd> <kbd>←</kbd> <kbd>→</kbd>
+                        </span>
+                    </div>
+                    <div class="mermaid hover-mode" id="mcp-integration-mermaid">
 flowchart LR
-    subgraph MCP["MCP External Tools"]
-        PyPI["PyPI Checker&lt;br/&gt;Name availability"]
-        GitHub["GitHub Creator&lt;br/&gt;Repository setup"]
-        Deps["Dependency Validator&lt;br/&gt;Package verification"]
-        Fmt["Code Formatter&lt;br/&gt;Black + isort"]
+    subgraph MCP[MCP External Tools]
+        PyPI[PyPI Checker]
+        GitHub[GitHub Creator]
+        Deps[Dependency Validator]
+        Fmt[Code Formatter]
     end
-    Design["CLI Design"] --> PyPI
-    PyPI --> Generate["Code Generation"]
+    Design[CLI Design] --> PyPI
+    PyPI --> Generate[Code Generation]
     Generate --> Deps
     Deps --> Fmt
     Fmt --> GitHub
-    style PyPI fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
-    style GitHub fill:#fef3c7,stroke:#d97706,stroke-width:2px
-    style Deps fill:#dcfce7,stroke:#16a34a,stroke-width:2px
-    style Fmt fill:#fce7f3,stroke:#db2777,stroke-width:2px
-    style Design fill:#f1f5f9,stroke:#64748b,stroke-width:2px
-    style Generate fill:#f3e8ff,stroke:#9333ea,stroke-width:2px
+    style PyPI fill:#e0f2fe,stroke:#0284c7
+    style GitHub fill:#fef3c7,stroke:#d97706
+    style Deps fill:#dcfce7,stroke:#16a34a
+    style Fmt fill:#fce7f3,stroke:#db2777
+    style Design fill:#f1f5f9,stroke:#64748b
+    style Generate fill:#f3e8ff,stroke:#9333ea
                     </div>
                 </div>
 
@@ -8210,6 +8250,66 @@ ENTRYPOINT ["my-cli"]</code></pre>
                     'I': { outgoing: ['F'], incoming: ['G'] },
                     'J': { outgoing: ['K'], incoming: ['G'] },
                     'K': { outgoing: [], incoming: ['J'] }
+                }
+            },
+            'subagent-architecture': {
+                nodes: ['Human', 'Integrator', 'SD', 'CG', 'TW', 'RV'],
+                edges: [
+                    { from: 'Human', to: 'Integrator' },      // 0
+                    { from: 'Integrator', to: 'SD' },         // 1
+                    { from: 'SD', to: 'Integrator' },         // 2
+                    { from: 'Integrator', to: 'CG' },         // 3
+                    { from: 'Integrator', to: 'TW' },         // 4
+                    { from: 'CG', to: 'Integrator' },         // 5
+                    { from: 'TW', to: 'Integrator' },         // 6
+                    { from: 'Integrator', to: 'RV' },         // 7
+                    { from: 'RV', to: 'Integrator' },         // 8
+                    { from: 'Integrator', to: 'Human' }       // 9
+                ],
+                steps: [
+                    { nodes: ['Human'], edges: [], description: 'Human makes a request: "Create a CLI for image conversion"' },
+                    { nodes: ['Human', 'Integrator'], edges: [0], description: 'Integrator receives request and coordinates the workflow' },
+                    { nodes: ['Integrator', 'SD'], edges: [1], description: 'Integrator delegates to Spec Designer for CLI UX design' },
+                    { nodes: ['SD', 'Integrator'], edges: [2], description: 'Spec Designer returns CLISpec with commands and options' },
+                    { nodes: ['Integrator', 'CG', 'TW'], edges: [3, 4], description: 'Integrator sends spec to Code Generator and Test Writer in parallel' },
+                    { nodes: ['CG', 'TW', 'Integrator'], edges: [5, 6], description: 'Both return their outputs: Python code and pytest tests' },
+                    { nodes: ['Integrator', 'RV'], edges: [7], description: 'Integrator sends everything to Reviewer for quality check' },
+                    { nodes: ['RV', 'Integrator'], edges: [8], description: 'Reviewer validates consistency and returns approval or feedback' },
+                    { nodes: ['Integrator', 'Human'], edges: [9], description: 'Integrator delivers final result to Human' }
+                ],
+                connections: {
+                    'Human': { outgoing: ['Integrator'], incoming: ['Integrator'] },
+                    'Integrator': { outgoing: ['SD', 'CG', 'TW', 'RV', 'Human'], incoming: ['Human', 'SD', 'CG', 'TW', 'RV'] },
+                    'SD': { outgoing: ['Integrator'], incoming: ['Integrator'] },
+                    'CG': { outgoing: ['Integrator'], incoming: ['Integrator'] },
+                    'TW': { outgoing: ['Integrator'], incoming: ['Integrator'] },
+                    'RV': { outgoing: ['Integrator'], incoming: ['Integrator'] }
+                }
+            },
+            'mcp-integration': {
+                nodes: ['Design', 'PyPI', 'Generate', 'Deps', 'Fmt', 'GitHub'],
+                edges: [
+                    { from: 'Design', to: 'PyPI' },           // 0
+                    { from: 'PyPI', to: 'Generate' },         // 1
+                    { from: 'Generate', to: 'Deps' },         // 2
+                    { from: 'Deps', to: 'Fmt' },              // 3
+                    { from: 'Fmt', to: 'GitHub' }             // 4
+                ],
+                steps: [
+                    { nodes: ['Design'], edges: [], description: 'Start with CLI design from /design command' },
+                    { nodes: ['Design', 'PyPI'], edges: [0], description: 'PyPI Checker verifies package name is available' },
+                    { nodes: ['PyPI', 'Generate'], edges: [1], description: 'If available, Code Generation creates the CLI' },
+                    { nodes: ['Generate', 'Deps'], edges: [2], description: 'Dependency Validator checks all packages exist and are compatible' },
+                    { nodes: ['Deps', 'Fmt'], edges: [3], description: 'Code Formatter runs Black + isort for consistent style' },
+                    { nodes: ['Fmt', 'GitHub'], edges: [4], description: 'GitHub Creator sets up repository with CI/CD' }
+                ],
+                connections: {
+                    'Design': { outgoing: ['PyPI'], incoming: [] },
+                    'PyPI': { outgoing: ['Generate'], incoming: ['Design'] },
+                    'Generate': { outgoing: ['Deps'], incoming: ['PyPI'] },
+                    'Deps': { outgoing: ['Fmt'], incoming: ['Generate'] },
+                    'Fmt': { outgoing: ['GitHub'], incoming: ['Deps'] },
+                    'GitHub': { outgoing: [], incoming: ['Fmt'] }
                 }
             }
         };
