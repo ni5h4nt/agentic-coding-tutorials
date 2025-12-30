@@ -2133,7 +2133,7 @@ mkdir cli-generator
 cd cli-generator
 
 # Claude Code directories
-mkdir -p .claude/{commands,hooks,skills,subagents,mcp,rules,plugins}
+mkdir -p .claude/{commands,hooks,skills,agents,mcp,rules,plugins}
 
 # Source code directories
 mkdir -p src/cli_generator/{generators,validators,templates}
@@ -2317,7 +2317,7 @@ cli-generator/
 │   ├── commands/              # Slash commands
 │   ├── hooks/                 # Quality gates
 │   ├── skills/                # Context-aware behaviors
-│   ├── subagents/             # Specialized agents
+│   ├── agents/                # Specialized agents
 │   ├── mcp/                   # External tool definitions
 │   └── rules/                 # Standards and guidelines
 ├── src/cli_generator/
@@ -5312,511 +5312,425 @@ flowchart TD
                 </div>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Subagent 1: Spec Designer</h3>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/subagents/spec_designer.md</code></p>
-                <pre><code class="language-markdown"># Spec Designer Subagent
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/agents/spec-designer.md</code></p>
+                <pre><code class="language-markdown">---
+name: spec-designer
+description: Design user-friendly CLI specifications from natural language. Use PROACTIVELY when users describe a new CLI tool.
+tools: Read, Glob, Grep
+model: sonnet
+---
 
-## Role
-Design user-friendly CLI specifications from descriptions.
-Does NOT write code or tests.
+You are a CLI Spec Designer. Your role is to transform natural language
+descriptions into well-structured CLI specifications.
 
-## Responsibilities
-1. Parse natural language descriptions
-2. Identify commands, arguments, options
-3. Apply CLI best practices
-4. Create helpful descriptions and examples
-5. Ensure consistent naming
-
-## Expertise
-- Click/CLI conventions
+## Your Expertise
+- Click/CLI conventions and best practices
 - User experience for command-line tools
-- Common CLI patterns (POSIX, GNU)
+- Common CLI patterns (POSIX, GNU standards)
 
-## Input
-Receives from Integrator:
-- Natural language description
-- User preferences (from CLAUDE.md)
-- Any constraints or requirements
+## Your Process
+1. Parse the natural language description
+2. Identify commands, arguments, and options
+3. Apply CLI best practices (--help, --version, proper exit codes)
+4. Create helpful descriptions and usage examples
+5. Ensure consistent naming conventions
 
-## Output
-Delivers to Integrator:
-- Complete CLISpec
-- Design rationale for non-obvious choices
-- Questions about ambiguities
-- Suggestions for improvements
+## Output Format
+Always respond with a structured specification:
 
-## Communication Format
-
-# SPEC DESIGNER REPORT
-
-Description: &lt;original description&gt;
-Status: SPEC READY | NEEDS CLARIFICATION | ERROR
-
+```
 CLI: &lt;name&gt;
-Commands: &lt;count&gt;
+Description: &lt;what it does&gt;
+
+Commands:
+  &lt;command_name&gt;:
+    description: &lt;help text&gt;
+    arguments: [...]
+    options: [...]
 
 Design Decisions:
-1. &lt;decision and rationale&gt;
-2. &lt;decision and rationale&gt;
+- &lt;decision and rationale&gt;
 
-Questions:
+Questions (if any):
 - &lt;ambiguity needing clarification&gt;
+```
 
-Suggestions:
-- &lt;improvement idea&gt;
-
-Ready for code generation.</code></pre>
+## Constraints
+- Do NOT write implementation code
+- Do NOT write tests
+- Focus ONLY on CLI design and user experience</code></pre>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Subagent 2: Code Generator</h3>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/subagents/code_generator.md</code></p>
-                <pre><code class="language-markdown"># Code Generator Subagent
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/agents/code-generator.md</code></p>
+                <pre><code class="language-markdown">---
+name: code-generator
+description: Generate Python/Click code from CLI specifications. Use after spec-designer completes.
+tools: Read, Glob, Grep, Write, Edit
+model: sonnet
+---
 
-## Role
-Generate correct, clean Python/Click code from specifications.
-Does NOT design CLIs or write tests.
+You are a CLI Code Generator. Your role is to transform CLI specifications
+into working Python code using the Click framework.
 
-## Responsibilities
-1. Transform CLISpec into Python code
-2. Apply templates correctly
-3. Ensure code is syntactically valid
-4. Follow Python best practices
-5. Generate supporting files (pyproject.toml, README)
+## Your Expertise
+- Python 3.11+ syntax and features
+- Click library patterns and decorators
+- Python packaging (pyproject.toml, __init__.py)
+- Code quality standards (PEP 8, type hints)
 
-## Expertise
-- Python 3.11+ syntax
-- Click library patterns
-- Jinja2 templating
-- Python packaging
-
-## Input
-Receives from Integrator:
-- Validated CLISpec
-- Code templates
-- Generation preferences
-
-## Output
-Delivers to Integrator:
-- Generated Python files
-- File manifest
-- Any generation warnings
-- Compilation status
-
-## Communication Format
-
-# CODE GENERATOR REPORT
-
-Spec: &lt;cli_name&gt;
-Status: CODE GENERATED | GENERATION FAILED | WARNINGS
-
-Files Created:
-- &lt;path&gt;: &lt;line count&gt; lines
-- &lt;path&gt;: &lt;line count&gt; lines
-
-Compilation: ✓ All files valid Python | ✗ Errors found
-
-Warnings:
-- &lt;any issues noticed&gt;
-
-Ready for test generation.
+## Your Process
+1. Read the CLI specification provided
+2. Generate the main CLI entry point (cli.py)
+3. Create command implementations
+4. Generate pyproject.toml with dependencies
+5. Verify code is syntactically valid
 
 ## Code Quality Standards
-- PEP 8 compliant
-- Type hints on functions
-- Docstrings on commands
-- No hardcoded values
-- Proper error handling structure</code></pre>
+- PEP 8 compliant formatting
+- Type hints on all function signatures
+- Docstrings on all commands (becomes --help text)
+- No hardcoded values (use options/arguments)
+- Proper error handling with click.ClickException
+
+## Output Format
+Generate files in this structure:
+```
+&lt;cli_name&gt;/
+├── __init__.py
+├── cli.py          # Main CLI with @click.group()
+├── commands/       # One file per command (optional)
+└── pyproject.toml  # Package configuration
+```
+
+## Constraints
+- Do NOT design the CLI (use provided spec)
+- Do NOT write tests (separate agent handles this)
+- Focus ONLY on generating clean, working code</code></pre>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Subagent 3: Test Writer</h3>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/subagents/test_writer.md</code></p>
-                <pre><code class="language-markdown"># Test Writer Subagent
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/agents/test-writer.md</code></p>
+                <pre><code class="language-markdown">---
+name: test-writer
+description: Write comprehensive pytest tests for CLI code. Use after code-generator completes.
+tools: Read, Glob, Grep, Write, Edit, Bash
+model: sonnet
+---
 
-## Role
-Write comprehensive pytest tests for generated CLIs.
-Does NOT write production code.
+You are a CLI Test Writer. Your role is to create comprehensive pytest
+test suites for generated CLI applications.
 
-## Responsibilities
-1. Create test cases for each command
-2. Cover happy paths and error cases
-3. Test CLI integration (--help, --version)
-4. Create test fixtures
-5. Aim for high coverage
-
-## Expertise
-- pytest patterns
-- Click testing utilities
+## Your Expertise
+- pytest patterns and best practices
+- Click testing utilities (CliRunner)
 - Test fixture design
-- Mocking strategies
+- Mocking strategies for external dependencies
 
-## Input
-Receives from Integrator:
-- CLISpec
-- Generated code (for reference)
-- Coverage requirements
+## Your Process
+1. Read the CLI specification and generated code
+2. Create test cases for each command
+3. Cover happy paths AND error cases
+4. Test CLI integration (--help, --version flags)
+5. Create reusable fixtures in conftest.py
 
-## Output
-Delivers to Integrator:
-- Test files
-- Fixture files
-- Expected coverage estimate
-- Edge cases identified
+## Test Categories
+- **Happy path**: Normal usage with valid inputs
+- **Error cases**: Invalid inputs, missing files, etc.
+- **Edge cases**: Empty inputs, special characters, limits
+- **Integration**: Full CLI invocation tests
 
-## Communication Format
+## Output Format
+Generate tests in this structure:
+```
+tests/
+├── conftest.py      # Shared fixtures
+├── test_cli.py      # Main CLI tests (--help, --version)
+└── test_&lt;cmd&gt;.py    # Per-command tests
+```
 
-# TEST WRITER REPORT
-
-CLI: &lt;cli_name&gt;
-Status: TESTS WRITTEN | PARTIAL | BLOCKED
-
-Files Created:
-- tests/test_cli.py: &lt;count&gt; tests
-- tests/test_&lt;command&gt;.py: &lt;count&gt; tests
-- tests/conftest.py: fixtures
-
-Test Summary:
-  Total tests: &lt;count&gt;
-  - Happy path: &lt;count&gt;
-  - Error cases: &lt;count&gt;
-  - Edge cases: &lt;count&gt;
-
-Expected Coverage: ~&lt;percent&gt;%
-
-Edge Cases Covered:
-- &lt;edge case 1&gt;
-- &lt;edge case 2&gt;
-
-Ready for test execution.</code></pre>
+## Constraints
+- Do NOT modify production code
+- Do NOT design the CLI
+- Focus ONLY on comprehensive test coverage
+- Use Click's CliRunner for CLI invocation tests</code></pre>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Subagent 4: Reviewer</h3>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/subagents/reviewer.md</code></p>
-                <pre><code class="language-markdown"># Reviewer Subagent
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/agents/code-reviewer.md</code></p>
+                <pre><code class="language-markdown">---
+name: code-reviewer
+description: Review generated CLI code and tests for quality. Use PROACTIVELY after code generation.
+tools: Read, Glob, Grep
+model: sonnet
+---
 
-## Role
-Review generated code and tests for quality, consistency, and correctness.
-Does NOT write code.
-
-## Responsibilities
-1. Check code follows standards
-2. Verify test coverage is adequate
-3. Identify potential issues
-4. Suggest improvements
-5. Approve or request changes
+You are a CLI Code Reviewer. Your role is to review generated code and tests
+for quality, consistency, and correctness.
 
 ## Review Checklist
 
 ### Code Quality
-- [ ] Follows PEP 8
-- [ ] Type hints present
-- [ ] Docstrings complete
-- [ ] Error handling adequate
-- [ ] No code duplication
+- Follows PEP 8 style guidelines
+- Type hints on all function signatures
+- Docstrings on all public functions
+- Proper error handling with click.ClickException
+- No code duplication
 
 ### CLI Usability
-- [ ] Help text is helpful
-- [ ] Error messages are clear
-- [ ] Exit codes are correct
-- [ ] Options are intuitive
+- Help text is clear and helpful
+- Error messages guide users to fix issues
+- Exit codes follow conventions (0=success, 1=error)
+- Option names are intuitive
 
 ### Security
-- [ ] No dangerous patterns
-- [ ] Inputs validated
-- [ ] No hardcoded secrets
-- [ ] Safe file operations
+- No dangerous patterns (eval, exec)
+- User inputs are validated
+- No hardcoded secrets or credentials
+- Safe file operations
 
 ### Tests
-- [ ] Cover all commands
-- [ ] Test error cases
-- [ ] Meaningful assertions
-- [ ] No flaky tests
+- Cover all commands and options
+- Test error cases explicitly
+- Meaningful assertions (not just "runs without error")
+- No flaky or timing-dependent tests
 
-## Communication Format
+## Output Format
+```
+REVIEW: &lt;cli_name&gt;
+Status: APPROVED | CHANGES REQUESTED
 
-# REVIEWER REPORT
+Issues (if any):
+- [BLOCKING] &lt;description&gt; at &lt;file:line&gt;
+- [SUGGESTION] &lt;description&gt;
 
-CLI: &lt;cli_name&gt;
-Status: APPROVED | CHANGES REQUESTED | BLOCKED
+Summary: &lt;brief assessment&gt;
+```
 
-Issues Found:
+## Constraints
+- Do NOT modify code directly
+- Report issues for other agents to fix
+- Focus ONLY on review and feedback</code></pre>
 
-BLOCKING (must fix):
-1. &lt;issue description&gt;
-   Location: &lt;file:line&gt;
-   Fix: &lt;suggested fix&gt;
+                <h3 class="text-xl font-semibold mt-8 mb-3">How Claude Code Coordinates Agents</h3>
+                <p class="mb-4">Unlike custom orchestration frameworks, Claude Code handles agent coordination natively. The main Claude agent acts as the integrator, delegating to specialized agents based on their <code>description</code> fields.</p>
 
-SUGGESTIONS (should consider):
-1. &lt;suggestion&gt;
-   Rationale: &lt;why&gt;
+                <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 my-4">
+                    <p class="font-semibold mb-2">Key Insight: Automatic Delegation</p>
+                    <p class="text-sm">Claude reads all agent descriptions and automatically delegates tasks when a match is found. Include "Use PROACTIVELY" in descriptions to encourage automatic use.</p>
+                </div>
 
-Recommendation: APPROVE | REQUEST CHANGES</code></pre>
+                <h4 class="text-lg font-semibold mt-6 mb-3">Managing Agents with /agents</h4>
+                <p class="mb-4">Use the <code>/agents</code> command to view, create, edit, and manage your project's agents:</p>
+                <pre><code class="language-bash"># View all available agents
+/agents
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Integrator: Coordinating Subagents</h3>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/subagents/integrator.md</code></p>
-                <pre><code class="language-markdown"># Integrator Subagent
+# The interactive menu lets you:
+# - See built-in agents (general-purpose, Plan, Explore)
+# - View your custom agents
+# - Create new agents with guided setup
+# - Edit agent tools and permissions
+# - Delete agents you no longer need</code></pre>
 
-## Role
-Coordinate other subagents and manage workflow.
-Single point of contact with the human.
+                <h4 class="text-lg font-semibold mt-6 mb-3">Invoking Agents Explicitly</h4>
+                <p class="mb-4">You can request specific agents by name in your prompts:</p>
+                <pre><code class="language-markdown"># Explicit invocation examples:
+"Use the spec-designer agent to design a CLI for managing dotfiles"
+"Have the code-reviewer agent check my recent changes"
+"Ask the test-writer agent to add tests for the convert command"</code></pre>
 
-## Responsibilities
-1. Receive requests from human
-2. Break into subtasks
-3. Assign to appropriate subagent
-4. Collect and merge outputs
-5. Handle conflicts
-6. Report results
+                <h4 class="text-lg font-semibold mt-6 mb-3">Agent Chaining</h4>
+                <p class="mb-4">For complex workflows, chain agents in sequence:</p>
+                <pre><code class="language-markdown"># Chain multiple agents for full CLI creation:
+"First use spec-designer to design a CLI for image conversion,
+then have code-generator implement it,
+then ask test-writer to create tests,
+and finally have code-reviewer check everything"</code></pre>
 
-## Conflict Resolution
+                <h3 class="text-xl font-semibold mt-8 mb-3">/create-cli Command with Agent Workflow</h3>
+                <p class="mb-4"><strong>Create:</strong> <code>.claude/commands/create-cli.md</code></p>
+                <pre><code class="language-markdown"># /create-cli - Create CLI Using Specialized Agents
 
-### Spec vs Code Conflict
-Code Generator: Can't implement option X as designed
-
-Resolution:
-1. Ask Spec Designer for alternative design
-2. Or flag for human decision
-
-### Test vs Code Conflict
-Test Writer: Test expects behavior not in implementation
-
-Resolution:
-1. Check spec for intended behavior
-2. Fix test or implementation accordingly
-3. Or flag for human decision
-
-## Communication Format
-
-# INTEGRATION SUMMARY
-
-Request: &lt;original request&gt;
-Status: COMPLETE | IN PROGRESS | BLOCKED
-
-Subagent Status:
-  ✓ Spec Designer: Complete
-  ✓ Code Generator: Complete
-  ✓ Test Writer: Complete
-  → Reviewer: In progress
-
-Conflicts Resolved: &lt;count&gt;
-  &lt;brief description&gt;
-
-Pending Human Decision:
-  &lt;question if any&gt;
-
-Next Step: &lt;what happens next&gt;</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">/parallel-create Command</h3>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/commands/parallel-create.md</code></p>
-                <pre><code class="language-markdown"># /parallel-create - Create CLI with Subagents
+Create a complete CLI application by delegating to specialized agents.
 
 ## Usage
-/parallel-create &lt;description&gt;
-/parallel-create "A tool to manage dotfiles"
+/create-cli $ARGUMENTS
+
+## Workflow
+
+You have access to these specialized agents in `.claude/agents/`:
+- **spec-designer**: Designs CLI structure from natural language
+- **code-generator**: Generates Python/Click code from specs
+- **test-writer**: Creates comprehensive pytest test suites
+- **code-reviewer**: Reviews code quality and suggests improvements
 
 ## Process
 
-### 1. Initialize
-# Parallel CLI Creation
+### Phase 1: Design
+Delegate to spec-designer agent:
+"Use the spec-designer agent to design a CLI for: $ARGUMENTS"
 
-Description: &lt;description&gt;
+Wait for the specification and present it to the user for approval.
 
-Activating subagents:
-  ✓ Spec Designer
-  ✓ Code Generator (standby)
-  ✓ Test Writer (standby)
-  ✓ Reviewer (standby)
-  ★ Integrator (coordinating)
+### Phase 2: Implementation
+After spec approval, delegate to code-generator:
+"Use code-generator to implement this CLI spec: [spec from phase 1]"
 
-Starting design phase...
+### Phase 3: Testing
+Delegate to test-writer:
+"Use test-writer to create tests for the generated CLI"
 
-### 2. Design Phase
-Spec Designer creates CLISpec.
-Present to human for approval.
+### Phase 4: Review
+Finally, delegate to code-reviewer:
+"Use code-reviewer to review the generated code and tests"
 
-### 3. Parallel Generation
-Code Generator and Test Writer work simultaneously:
+## Output
+Present the final summary:
+- Files created
+- Test results
+- Review findings
+- Next steps for the user</code></pre>
 
-# Generation Progress
-
-[████████░░] Code Generator: cli.py complete
-[██████░░░░] Test Writer: test_cli.py in progress
-
-### 4. Review Phase
-Reviewer checks everything.
-
-### 5. Final Approval
-
-# CLI Creation Complete
-
-CLI: pdf-compress
-Location: ./generated/pdf-compress/
-
-Files:
-  ✓ pdf_compress/cli.py (45 lines)
-  ✓ pdf_compress/__init__.py
-  ✓ tests/test_cli.py (12 tests)
-  ✓ pyproject.toml
-  ✓ README.md
-
-Review: APPROVED
-  - 0 blocking issues
-  - 2 suggestions noted
-
-Tests: 12/12 passing
-Coverage: 85%
-
-Ready to use:
-  cd ./generated/pdf-compress
-  uv pip install -e .
-  pdf-compress --help</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">SubagentCoordinator Implementation</h3>
-                <pre><code class="language-python"># src/cli_generator/subagents/__init__.py
+                <h3 class="text-xl font-semibold mt-8 mb-3">Advanced: Building Your Own Agent Coordinator</h3>
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 my-4">
+                    <p class="font-semibold mb-2">Optional Pattern</p>
+                    <p class="text-sm">This section shows how to build application-level agent coordination in Python. Claude Code handles agent delegation natively - this is only needed if you want programmatic control over agent workflows in your own CLI tools.</p>
+                </div>
+                <p class="mb-4">If you're building a CLI that needs to coordinate multiple AI agents programmatically (e.g., using PydanticAI or the Claude SDK), here's a pattern you can follow:</p>
+                <pre><code class="language-python"># src/cli_generator/coordinator.py
+"""
+Optional: Application-level agent coordination.
+Use this pattern when building CLI tools that orchestrate multiple AI agents.
+"""
 
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
 
-class SubagentStatus(Enum):
-    IDLE = "idle"
-    WORKING = "working"
+class AgentPhase(Enum):
+    """Tracks which phase of the workflow we're in."""
+    DESIGN = "design"
+    GENERATE = "generate"
+    TEST = "test"
+    REVIEW = "review"
     COMPLETE = "complete"
-    ERROR = "error"
-    WAITING = "waiting"
 
 
 @dataclass
-class SubagentReport:
-    agent: str
-    status: SubagentStatus
+class PhaseResult:
+    """Result from an agent phase."""
+    phase: AgentPhase
+    success: bool
     output: Any
     errors: list[str] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
 
 
-class SubagentCoordinator:
-    """Coordinates multiple subagents for CLI generation."""
+class WorkflowCoordinator:
+    """
+    Coordinates a multi-phase CLI generation workflow.
 
-    def __init__(self):
-        self.agents = {
-            "spec_designer": SubagentStatus.IDLE,
-            "code_generator": SubagentStatus.IDLE,
-            "test_writer": SubagentStatus.IDLE,
-            "reviewer": SubagentStatus.IDLE,
+    This is an APPLICATION pattern, not a Claude Code feature.
+    Use when you need programmatic control over agent sequencing.
+    """
+
+    def __init__(self) -> None:
+        self.current_phase = AgentPhase.DESIGN
+        self.results: dict[AgentPhase, PhaseResult] = {}
+
+    async def run_workflow(self, description: str) -> dict[str, Any]:
+        """Run the complete CLI generation workflow."""
+        # Phase 1: Design
+        spec = await self._run_design(description)
+        if not spec:
+            return {"success": False, "phase": "design"}
+
+        # Phase 2: Generate code
+        code = await self._run_generate(spec)
+
+        # Phase 3: Generate tests (can run parallel with code)
+        tests = await self._run_tests(spec)
+
+        # Phase 4: Review everything
+        review = await self._run_review(code, tests)
+
+        return {
+            "success": True,
+            "spec": spec,
+            "code": code,
+            "tests": tests,
+            "review": review,
         }
-        self.reports: dict[str, SubagentReport] = {}
-        self.conflicts: list[dict] = []
 
-    async def run_design_phase(self, description: str) -> SubagentReport:
-        """Run spec designer and return report."""
-        self.agents["spec_designer"] = SubagentStatus.WORKING
+    async def _run_design(self, description: str) -> dict | None:
+        """Call your spec generation logic here."""
+        self.current_phase = AgentPhase.DESIGN
+        # Your implementation using PydanticAI, Claude SDK, etc.
+        pass
 
-        from ..generators.spec_generator import SpecGenerator
+    async def _run_generate(self, spec: dict) -> dict | None:
+        """Call your code generation logic here."""
+        self.current_phase = AgentPhase.GENERATE
+        pass
 
-        generator = SpecGenerator()
-        try:
-            spec = await generator.generate(description)
-            report = SubagentReport(
-                agent="spec_designer",
-                status=SubagentStatus.COMPLETE,
-                output=spec
-            )
-        except Exception as e:
-            report = SubagentReport(
-                agent="spec_designer",
-                status=SubagentStatus.ERROR,
-                output=None,
-                errors=[str(e)]
-            )
+    async def _run_tests(self, spec: dict) -> dict | None:
+        """Call your test generation logic here."""
+        self.current_phase = AgentPhase.TEST
+        pass
 
-        self.reports["spec_designer"] = report
-        self.agents["spec_designer"] = report.status
-        return report
+    async def _run_review(self, code: dict, tests: dict) -> dict | None:
+        """Call your review logic here."""
+        self.current_phase = AgentPhase.REVIEW
+        pass</code></pre>
 
-    async def run_generation_phase(self, spec) -> tuple[SubagentReport, SubagentReport]:
-        """Run code generator and test writer in parallel."""
-        import asyncio
+                <h3 class="text-xl font-semibold mt-8 mb-3">SubagentStop Hook: Control Agent Completion</h3>
+                <p class="mb-4">The <code>SubagentStop</code> hook fires when a Claude Code agent (Task tool) finishes. You can use it to prevent the agent from stopping if certain conditions aren't met.</p>
 
-        self.agents["code_generator"] = SubagentStatus.WORKING
-        self.agents["test_writer"] = SubagentStatus.WORKING
+                <h4 class="text-lg font-semibold mt-6 mb-3">Hook Input Structure</h4>
+                <pre><code class="language-json">{
+  "session_id": "abc123",
+  "transcript_path": "~/.claude/projects/.../agent-xyz.jsonl",
+  "permission_mode": "default",
+  "hook_event_name": "SubagentStop",
+  "stop_hook_active": true
+}</code></pre>
 
-        # Run both in parallel
-        code_task = self._generate_code(spec)
-        test_task = self._generate_tests(spec)
+                <h4 class="text-lg font-semibold mt-6 mb-3">Hook Output (Decision Control)</h4>
+                <pre><code class="language-json">// To BLOCK the agent from stopping (force retry):
+{ "decision": "block", "reason": "Explain why and what to do" }
 
-        code_report, test_report = await asyncio.gather(code_task, test_task)
+// To ALLOW the agent to stop (default):
+// Return nothing or exit with code 0</code></pre>
 
-        self.reports["code_generator"] = code_report
-        self.reports["test_writer"] = test_report
-        self.agents["code_generator"] = code_report.status
-        self.agents["test_writer"] = test_report.status
-
-        return code_report, test_report
-
-    async def run_review_phase(self) -> SubagentReport:
-        """Run reviewer on all outputs."""
-        self.agents["reviewer"] = SubagentStatus.WORKING
-
-        # Collect all outputs for review
-        code_output = self.reports.get("code_generator", {}).output
-        test_output = self.reports.get("test_writer", {}).output
-        spec = self.reports.get("spec_designer", {}).output
-
-        report = SubagentReport(
-            agent="reviewer",
-            status=SubagentStatus.COMPLETE,
-            output={
-                "approved": True,
-                "blocking_issues": [],
-                "suggestions": ["Consider adding --json flag"]
-            }
-        )
-
-        self.reports["reviewer"] = report
-        self.agents["reviewer"] = report.status
-        return report
-
-    def get_status_summary(self) -> str:
-        """Get a formatted status summary."""
-        lines = ["Subagent Status:"]
-        for agent, status in self.agents.items():
-            icon = {
-                SubagentStatus.IDLE: "○",
-                SubagentStatus.WORKING: "→",
-                SubagentStatus.COMPLETE: "✓",
-                SubagentStatus.ERROR: "✗",
-                SubagentStatus.WAITING: "◐",
-            }.get(status, "?")
-            lines.append(f"  {icon} {agent}: {status.value}")
-        return "\n".join(lines)</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">SubagentStop Hook: Validate Subagent Output</h3>
-                <p class="mb-4">The <code>SubagentStop</code> hook fires when any subagent completes. Use it to validate output before the main agent continues:</p>
-
-                <p class="mb-2">Create <code>.claude/hooks/subagent_stop.py</code>:</p>
+                <p class="mb-2 mt-6">Create <code>.claude/hooks/subagent_stop.py</code>:</p>
                 <pre><code class="language-python">#!/usr/bin/env python3
 """
-SubagentStop Hook: Runs when a subagent completes.
-Validate output quality before main agent accepts it.
+SubagentStop Hook: Runs when an agent completes.
+Use to enforce quality gates on agent output.
 """
 import json
 import sys
+from pathlib import Path
 
-def main():
+def main() -> None:
     try:
         input_data = json.load(sys.stdin)
 
-        # subagent_result contains the subagent's output
-        result = input_data.get("subagent_result", "")
+        # Read the agent's transcript to check its output
+        transcript_path = input_data.get("transcript_path", "")
+        if transcript_path:
+            transcript = Path(transcript_path).expanduser()
+            if transcript.exists():
+                content = transcript.read_text()
 
-        # Example: Check if code generator produced valid Python
-        if "def " not in result and "class " not in result:
-            # Block: force subagent to retry
-            output = {
-                "decision": "block",
-                "reason": "Subagent output missing function/class definitions. Please retry."
-            }
-            print(json.dumps(output))
-        else:
-            print(f"Subagent completed: {len(result)} chars of output")
+                # Example: Check if agent created any files
+                if "Write" not in content and "Edit" not in content:
+                    # Block: agent didn't write any files
+                    output = {
+                        "decision": "block",
+                        "reason": "No files were created. Please generate the CLI code."
+                    }
+                    print(json.dumps(output))
+                    sys.exit(2)  # Exit 2 = blocking error
 
+        # Allow agent to complete
         sys.exit(0)
     except Exception:
         sys.exit(0)
@@ -5824,25 +5738,231 @@ def main():
 if __name__ == "__main__":
     main()</code></pre>
 
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4"><strong>What you'll see:</strong> After each subagent finishes, the hook validates output. If blocked, the subagent is asked to retry.</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4"><strong>Exit codes:</strong> Exit 0 allows completion. Exit 2 blocks and shows stderr to the agent.</p>
 
                 <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 my-4">
                     <p class="text-sm"><strong>Configuration:</strong> Add to <code>.claude/settings.json</code>:</p>
-                    <pre class="text-sm mt-2"><code class="language-json">"SubagentStop": [
-  { "matcher": "", "hooks": [
-    { "type": "command", "command": "uv run python .claude/hooks/subagent_stop.py" }
-  ]}
-]</code></pre>
+                    <pre class="text-sm mt-2"><code class="language-json">"hooks": {
+  "SubagentStop": [
+    {
+      "matcher": "",
+      "hooks": [
+        { "type": "command", "command": "python .claude/hooks/subagent_stop.py" }
+      ]
+    }
+  ]
+}</code></pre>
+                </div>
+
+                <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 p-4 my-4">
+                    <p class="font-semibold mb-2">Alternative: Prompt-Based Hooks</p>
+                    <p class="text-sm">You can also use LLM-based evaluation instead of scripts:</p>
+                    <pre class="text-sm mt-2"><code class="language-json">{
+  "type": "prompt",
+  "prompt": "Evaluate if this agent completed its task successfully. Check if code was generated and tests were written. Return {\"decision\": \"block\", \"reason\": \"...\"} to retry."
+}</code></pre>
+                </div>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Hands-On Exercises</h3>
+                <p class="mb-4">Now let's put agents into practice with concrete exercises.</p>
+
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 mb-6 border border-blue-200 dark:border-blue-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                        Exercise: Set Up Your Agents Directory
+                    </h4>
+                    <p class="mb-4 text-sm">First, create the agents directory and add one agent file:</p>
+                    <pre class="mb-4"><code class="language-bash"># Create the agents directory
+mkdir -p .claude/agents
+
+# Create the spec-designer agent
+cat > .claude/agents/spec-designer.md << 'EOF'
+---
+name: spec-designer
+description: Design user-friendly CLI specifications from natural language. Use PROACTIVELY when users describe a new CLI tool.
+tools: Read, Glob, Grep
+model: sonnet
+---
+
+You are a CLI Spec Designer specializing in Click-based Python CLIs.
+
+When given a description, output a structured specification with:
+- CLI name and description
+- Commands with their arguments and options
+- Design decisions and rationale
+
+Focus on user experience and CLI best practices.
+EOF
+
+echo "✓ Created .claude/agents/spec-designer.md"</code></pre>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Verify:</strong> Run <code>/agents</code> in Claude Code - you should see "spec-designer" listed under project agents.</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 mb-6 border border-green-200 dark:border-green-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                        Exercise: Invoke an Agent Explicitly
+                    </h4>
+                    <p class="mb-4 text-sm">Test your spec-designer agent by explicitly invoking it:</p>
+                    <pre class="mb-4"><code class="language-markdown"># Type this in Claude Code:
+Use the spec-designer agent to design a CLI for organizing files by extension</code></pre>
+                    <p class="mb-3 text-sm"><strong>What you should see:</strong></p>
+                    <div class="bg-gray-900 text-gray-100 rounded-lg p-4 text-sm font-mono mb-4">
+                        <div class="text-blue-400">╭─ spec-designer agent ─────────────────────────╮</div>
+                        <div class="text-gray-300 mt-2">CLI: file-organizer</div>
+                        <div class="text-gray-300">Description: Organize files into folders by extension</div>
+                        <div class="text-gray-300 mt-2">Commands:</div>
+                        <div class="text-gray-300">  organize:</div>
+                        <div class="text-gray-300">    description: Move files into extension-based folders</div>
+                        <div class="text-gray-300">    arguments: [source_dir]</div>
+                        <div class="text-gray-300">    options: [--dry-run, --recursive]</div>
+                        <div class="text-gray-300 mt-2">Design Decisions:</div>
+                        <div class="text-gray-300">- Default to current directory if no source specified</div>
+                        <div class="text-gray-300">- Include --dry-run for safety</div>
+                        <div class="text-blue-400 mt-2">╰────────────────────────────────────────────────╯</div>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Key observation:</strong> The agent ran in its own context and returned a structured specification. Claude didn't generate code - it delegated to the specialized agent.</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 mb-6 border border-purple-200 dark:border-purple-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
+                        Exercise: Create All Four Agents
+                    </h4>
+                    <p class="mb-4 text-sm">Now create the remaining three agents. Copy each definition from earlier in this tutorial:</p>
+                    <pre class="mb-4"><code class="language-bash"># Create all agent files (copy content from tutorial above)
+touch .claude/agents/code-generator.md
+touch .claude/agents/test-writer.md
+touch .claude/agents/code-reviewer.md
+
+# Verify all agents are recognized
+# In Claude Code, run:
+/agents</code></pre>
+                    <p class="mb-3 text-sm"><strong>Expected /agents output:</strong></p>
+                    <div class="bg-gray-900 text-gray-100 rounded-lg p-4 text-sm font-mono mb-4">
+                        <div class="text-yellow-400">Built-in agents:</div>
+                        <div class="text-gray-300">  • general-purpose - Complex research and modifications</div>
+                        <div class="text-gray-300">  • Plan - Research before presenting plans</div>
+                        <div class="text-gray-300">  • Explore - Fast codebase searching</div>
+                        <div class="text-yellow-400 mt-2">Project agents (.claude/agents/):</div>
+                        <div class="text-green-400">  • spec-designer - Design CLI specifications</div>
+                        <div class="text-green-400">  • code-generator - Generate Python/Click code</div>
+                        <div class="text-green-400">  • test-writer - Write pytest tests</div>
+                        <div class="text-green-400">  • code-reviewer - Review code quality</div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 mb-6 border border-orange-200 dark:border-orange-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">4</span>
+                        Exercise: Chain Agents for Full CLI Creation
+                    </h4>
+                    <p class="mb-4 text-sm">Now try the full workflow - chaining multiple agents to create a complete CLI:</p>
+                    <pre class="mb-4"><code class="language-markdown"># Type this in Claude Code:
+Create a CLI called "todo-cli" for managing a simple todo list.
+Use spec-designer to design it, code-generator to implement it,
+test-writer to add tests, and code-reviewer to check quality.</code></pre>
+                    <p class="mb-3 text-sm"><strong>Watch what happens:</strong></p>
+                    <ol class="list-decimal list-inside text-sm space-y-2 mb-4">
+                        <li>Claude delegates to <strong>spec-designer</strong> → returns CLI specification</li>
+                        <li>Claude presents spec for your approval</li>
+                        <li>After approval, delegates to <strong>code-generator</strong> → creates Python files</li>
+                        <li>Delegates to <strong>test-writer</strong> → creates test files</li>
+                        <li>Finally, <strong>code-reviewer</strong> checks everything</li>
+                    </ol>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Result:</strong> You should have a complete <code>generated/todo-cli/</code> directory with working code and tests!</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-xl p-6 mb-6 border border-red-200 dark:border-red-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">5</span>
+                        Exercise: Test the SubagentStop Hook
+                    </h4>
+                    <p class="mb-4 text-sm">Set up the quality gate hook to ensure agents produce valid output:</p>
+                    <pre class="mb-4"><code class="language-bash"># Create the hook file
+mkdir -p .claude/hooks
+cat > .claude/hooks/subagent_stop.py << 'EOF'
+#!/usr/bin/env python3
+"""Quality gate for agent output."""
+import json
+import sys
+from pathlib import Path
+
+def main() -> None:
+    input_data = json.load(sys.stdin)
+    transcript_path = input_data.get("transcript_path", "")
+
+    if transcript_path:
+        transcript = Path(transcript_path).expanduser()
+        if transcript.exists():
+            content = transcript.read_text()
+            # Check if agent actually did something
+            if "Write" not in content and "Edit" not in content:
+                print(json.dumps({
+                    "decision": "block",
+                    "reason": "Agent completed without creating files. Please try again."
+                }))
+                sys.exit(2)
+
+    print("✓ Agent output validated", file=sys.stderr)
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
+EOF
+chmod +x .claude/hooks/subagent_stop.py</code></pre>
+                    <p class="mb-3 text-sm">Add to <code>.claude/settings.json</code>:</p>
+                    <pre class="mb-4"><code class="language-json">{
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "python .claude/hooks/subagent_stop.py" }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+                    <p class="text-sm font-medium mt-4 mb-2">Test it manually:</p>
+                    <pre class="mb-4"><code class="language-bash"># Test PASS case (transcript contains "Write")
+echo "Agent used Write tool" > /tmp/test_transcript.txt
+echo '{"transcript_path": "/tmp/test_transcript.txt"}' | python3 .claude/hooks/subagent_stop.py
+# Expected: "✓ Agent output validated" (exit code 0)
+
+# Test BLOCK case (no Write/Edit in transcript)
+echo "Agent just searched files" > /tmp/test_transcript.txt
+echo '{"transcript_path": "/tmp/test_transcript.txt"}' | python3 .claude/hooks/subagent_stop.py
+# Expected: {"decision": "block", ...} (exit code 2)</code></pre>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Live test:</strong> Run a subagent with <code>Use the spec-designer agent to...</code> and watch for the validation message!</p>
+                </div>
+
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-xl p-6 mb-6">
+                    <h4 class="text-lg font-semibold mb-3">Troubleshooting</h4>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">Agent not appearing in /agents?</p>
+                            <p class="text-gray-600 dark:text-gray-400">Check YAML frontmatter syntax. The <code>---</code> delimiters must be on their own lines. Restart Claude Code after adding agent files.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">Agent not being invoked automatically?</p>
+                            <p class="text-gray-600 dark:text-gray-400">Add "Use PROACTIVELY" to the description field. Also try explicit invocation: "Use the X agent to..."</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">Hook not running?</p>
+                            <p class="text-gray-600 dark:text-gray-400">Verify settings.json syntax. Hooks must be nested under <code>"hooks": { "SubagentStop": [...] }</code>. Check file permissions on the Python script.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Day 7 Checklist</h3>
                 <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="checklist-item"><input type="checkbox" id="d7-1" @change="saveChecklist('d7-1', $event.target.checked)" :checked="checklist['d7-1']"><label for="d7-1">Four subagent roles defined</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d7-2" @change="saveChecklist('d7-2', $event.target.checked)" :checked="checklist['d7-2']"><label for="d7-2">Integrator coordination workflow defined</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d7-3" @change="saveChecklist('d7-3', $event.target.checked)" :checked="checklist['d7-3']"><label for="d7-3">/parallel-create command implemented</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d7-4" @change="saveChecklist('d7-4', $event.target.checked)" :checked="checklist['d7-4']"><label for="d7-4">SubagentCoordinator class working</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d7-5" @change="saveChecklist('d7-5', $event.target.checked)" :checked="checklist['d7-5']"><label for="d7-5">SubagentStop hook validates output</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d7-6" @change="saveChecklist('d7-6', $event.target.checked)" :checked="checklist['d7-6']"><label for="d7-6">Successfully created one CLI using subagents</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d7-1" @change="saveChecklist('d7-1', $event.target.checked)" :checked="checklist['d7-1']"><label for="d7-1">Created .claude/agents/ directory</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d7-2" @change="saveChecklist('d7-2', $event.target.checked)" :checked="checklist['d7-2']"><label for="d7-2">Four agent roles defined with YAML frontmatter</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d7-3" @change="saveChecklist('d7-3', $event.target.checked)" :checked="checklist['d7-3']"><label for="d7-3">Tested /agents command to view agents</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d7-4" @change="saveChecklist('d7-4', $event.target.checked)" :checked="checklist['d7-4']"><label for="d7-4">/create-cli command with agent workflow</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d7-5" @change="saveChecklist('d7-5', $event.target.checked)" :checked="checklist['d7-5']"><label for="d7-5">SubagentStop hook configured</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d7-6" @change="saveChecklist('d7-6', $event.target.checked)" :checked="checklist['d7-6']"><label for="d7-6">Successfully created one CLI using agent delegation</label></div>
                 </div>
                 <div class="flex justify-end mt-6"><button @click="toggleDay(7)" :class="completedDays.includes(7) ? 'bg-green-500' : 'bg-primary'" class="px-6 py-2 text-white rounded-lg hover:opacity-90"><span x-text="completedDays.includes(7) ? 'Completed!' : 'Mark as Complete'"></span></button></div>
             </section>
@@ -5863,23 +5983,39 @@ if __name__ == "__main__":
 
                 <h3 class="text-xl font-semibold mb-3">Learning Objectives</h3>
                 <ul class="list-disc list-inside mb-6 space-y-1">
-                    <li>Connect to external services safely</li>
-                    <li>Implement guardrails</li>
-                    <li>Build auditable tool usage</li>
+                    <li>Understand what MCP is and how it extends Claude Code</li>
+                    <li>Add and configure MCP servers</li>
+                    <li>Use MCP tools in your workflows</li>
+                    <li>Understand transport types and permissions</li>
                 </ul>
 
-                <h3 class="text-xl font-semibold mb-3">What MCP Provides</h3>
-                <p class="mb-4">Model Context Protocol standardizes external tool access:</p>
+                <h3 class="text-xl font-semibold mb-3">What is MCP?</h3>
+                <p class="mb-4"><strong>Model Context Protocol (MCP)</strong> is an open standard that connects Claude Code to external tools, databases, and services. Think of it as a plugin system for AI integrations.</p>
+
+                <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 my-4">
+                    <p class="font-semibold mb-2">Key Concept</p>
+                    <p class="text-sm">MCP servers are <strong>separate processes or HTTP endpoints</strong> that Claude connects to. They provide tools, resources, and prompts that extend Claude's capabilities. You don't write Python functions - you connect to server processes.</p>
+                </div>
+
+                <h4 class="text-lg font-semibold mt-6 mb-3">What MCP Servers Provide</h4>
                 <ul class="list-disc list-inside mb-4 space-y-1">
-                    <li>Consistent interface</li>
-                    <li>Built-in guardrails</li>
-                    <li>Audit logging</li>
-                    <li>Approval workflows</li>
+                    <li><strong>Tools</strong> - Actions Claude can invoke (create PR, query database)</li>
+                    <li><strong>Resources</strong> - Data Claude can reference with @mentions</li>
+                    <li><strong>Prompts</strong> - Become available as slash commands</li>
+                </ul>
+
+                <h4 class="text-lg font-semibold mt-6 mb-3">Real-World MCP Use Cases</h4>
+                <ul class="list-disc list-inside mb-4 space-y-1">
+                    <li>Query your PostgreSQL database directly</li>
+                    <li>Create GitHub issues and PRs</li>
+                    <li>Analyze errors from Sentry</li>
+                    <li>Manage Notion documents</li>
+                    <li>Search Slack conversations</li>
                 </ul>
                 <div class="mermaid-container mermaid-walkthrough" id="mcp-integration-diagram" data-walkthrough="mcp-integration">
                     <div class="mermaid-container-title">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
-                        MCP Tool Integration Pipeline
+                        MCP Architecture
                     </div>
                     <div class="mermaid-controls">
                         <button class="walkthrough-play" title="Play walkthrough (Space)">
@@ -5903,479 +6039,333 @@ if __name__ == "__main__":
                     </div>
                     <div class="mermaid hover-mode" id="mcp-integration-mermaid">
 flowchart LR
-    subgraph MCP[MCP External Tools]
-        B[PyPI Checker]
-        F[GitHub Creator]
-        D[Dependency Validator]
-        E[Code Formatter]
+    A[Claude Code] --> B[MCP Protocol]
+    subgraph Servers[MCP Servers]
+        C[GitHub Server]
+        D[Database Server]
+        E[Sentry Server]
     end
-    A[CLI Design] --> B
-    B --> C[Code Generation]
-    C --> D
-    D --> E
+    B --> C
+    B --> D
+    B --> E
+    C --> F[Tools + Resources]
+    D --> F
     E --> F
-    style B fill:#e0f2fe,stroke:#0284c7
-    style F fill:#fef3c7,stroke:#d97706
+    style A fill:#f3e8ff,stroke:#9333ea
+    style B fill:#fef3c7,stroke:#d97706
+    style C fill:#e0f2fe,stroke:#0284c7
     style D fill:#dcfce7,stroke:#16a34a
     style E fill:#fce7f3,stroke:#db2777
-    style A fill:#f1f5f9,stroke:#64748b
-    style C fill:#f3e8ff,stroke:#9333ea
+    style F fill:#f1f5f9,stroke:#64748b
                     </div>
                 </div>
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">MCP Tool 1: PyPI Name Checker</h3>
-                <p class="mb-2"><strong>Purpose:</strong> Check if CLI name is available on PyPI.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/mcp/pypi_checker.md</code></p>
-
-                <pre><code class="language-python"># src/cli_generator/mcp/pypi.py
-
-import httpx
-from dataclasses import dataclass
-
-
-@dataclass
-class PyPICheckResult:
-    name: str
-    available: bool | None  # None if check failed
-    existing_version: str | None = None
-    existing_description: str | None = None
-    error: str | None = None
-
-
-async def pypi_check_name(name: str) -> PyPICheckResult:
-    """Check if package name is available on PyPI."""
-
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            response = await client.get(f"https://pypi.org/pypi/{name}/json")
-
-            if response.status_code == 404:
-                return PyPICheckResult(
-                    name=name,
-                    available=True
-                )
-            elif response.status_code == 200:
-                data = response.json()
-                return PyPICheckResult(
-                    name=name,
-                    available=False,
-                    existing_version=data["info"]["version"],
-                    existing_description=data["info"]["summary"]
-                )
-            else:
-                return PyPICheckResult(
-                    name=name,
-                    available=None,
-                    error=f"Unexpected status: {response.status_code}"
-                )
-        except httpx.TimeoutException:
-            return PyPICheckResult(
-                name=name,
-                available=None,
-                error="Request timed out"
-            )</code></pre>
-
-                <p class="mt-4 mb-4">Integration - called automatically during /design:</p>
-                <pre><code class="language-text">Checking name availability...
-  PyPI: ✓ 'img-compress' is available
-
-Proceed with this name? [y/rename]</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">MCP Tool 2: GitHub Repository Creator</h3>
-                <p class="mb-2"><strong>Purpose:</strong> Create GitHub repo for generated CLI.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/mcp/github.md</code></p>
-
-                <pre><code class="language-python"># src/cli_generator/mcp/github.py
-
-import httpx
-import os
-from dataclasses import dataclass
-
-
-@dataclass
-class GitHubRepoResult:
-    success: bool
-    url: str | None = None
-    clone_url: str | None = None
-    error: str | None = None
-
-
-async def github_create_repo(
-    name: str,
-    description: str = "",
-    private: bool = False
-) -> GitHubRepoResult:
-    """Create a GitHub repository."""
-
-    token = os.environ.get("GITHUB_TOKEN")
-    if not token:
-        return GitHubRepoResult(
-            success=False,
-            error="GITHUB_TOKEN environment variable not set"
-        )
-
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                "https://api.github.com/user/repos",
-                headers={
-                    "Authorization": f"token {token}",
-                    "Accept": "application/vnd.github.v3+json"
-                },
-                json={
-                    "name": name,
-                    "description": description,
-                    "private": private,
-                    "auto_init": True
-                }
-            )
-
-            if response.status_code == 201:
-                data = response.json()
-                return GitHubRepoResult(
-                    success=True,
-                    url=data["html_url"],
-                    clone_url=data["clone_url"]
-                )
-            else:
-                error_msg = response.json().get("message", "Unknown error")
-                return GitHubRepoResult(
-                    success=False,
-                    error=f"GitHub API error: {error_msg}"
-                )
-        except Exception as e:
-            return GitHubRepoResult(
-                success=False,
-                error=str(e)
-            )</code></pre>
-
-                <p class="mt-4 mb-2"><strong>Approval Required:</strong> This tool requires human approval:</p>
-                <pre><code class="language-text">🔐 GitHub Action Requires Approval
-
-Action: Create repository
-Name: img-compress
-Description: CLI tool to compress images
-Visibility: Public
-
-This will:
-  - Create repository 'username/img-compress'
-  - Initialize with README
-  - Add generated code
-
-Approve? [y/n]</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">MCP Tool 3: Dependency Validator</h3>
-                <p class="mb-2"><strong>Purpose:</strong> Verify dependencies exist and are compatible.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/mcp/dependency_validator.md</code></p>
-
-                <pre><code class="language-python"># src/cli_generator/mcp/dependencies.py
-
-import httpx
-import re
-from dataclasses import dataclass
-
-
-@dataclass
-class DependencyCheckResult:
-    name: str
-    status: str  # "ok", "not_found", "incompatible", "error"
-    latest_version: str | None = None
-    message: str | None = None
-
-
-def parse_dependency(dep: str) -> tuple[str, str | None]:
-    """Parse dependency string into name and version spec."""
-    match = re.match(r'^([a-zA-Z0-9_-]+)(\[.*\])?(.*)?$', dep)
-    if match:
-        name = match.group(1)
-        version_spec = match.group(3) if match.group(3) else None
-        return name, version_spec
-    return dep, None
-
-
-async def validate_dependencies(
-    dependencies: list[str],
-    python_version: str = "3.11"
-) -> list[DependencyCheckResult]:
-    """Validate dependencies exist and are compatible."""
-
-    results = []
-
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        for dep in dependencies:
-            name, version_spec = parse_dependency(dep)
-
-            try:
-                response = await client.get(f"https://pypi.org/pypi/{name}/json")
-
-                if response.status_code == 404:
-                    results.append(DependencyCheckResult(
-                        name=name,
-                        status="not_found",
-                        message=f"Package '{name}' not found on PyPI"
-                    ))
-                    continue
-
-                data = response.json()
-                results.append(DependencyCheckResult(
-                    name=name,
-                    status="ok",
-                    latest_version=data["info"]["version"]
-                ))
-
-            except Exception as e:
-                results.append(DependencyCheckResult(
-                    name=name,
-                    status="error",
-                    message=str(e)
-                ))
-
-    return results</code></pre>
-
-                <p class="mt-4 mb-2">Integration - called during code generation:</p>
-                <pre><code class="language-text">Validating dependencies...
-  ✓ click>=8.1 (latest: 8.1.7)
-  ✓ rich>=13.0 (latest: 13.7.0)
-  ✗ nonexistent-package (not found)
-
-Fix dependencies before generating? [y/skip]</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">MCP Tool 4: Code Formatter</h3>
-                <p class="mb-2"><strong>Purpose:</strong> Format generated code with Black/Ruff.</p>
-                <p class="mb-4"><strong>Create:</strong> <code>.claude/mcp/formatter.md</code></p>
-
-                <pre><code class="language-python"># src/cli_generator/mcp/formatter.py
-
-import subprocess
-from pathlib import Path
-from dataclasses import dataclass
-
-
-@dataclass
-class FormatResult:
-    file: str
-    success: bool
-    changes: list[str]
-    error: str | None = None
-
-
-def format_code(file_path: str, check_only: bool = False) -> FormatResult:
-    """Format Python file with Black and isort."""
-
-    path = Path(file_path)
-    if not path.exists():
-        return FormatResult(
-            file=file_path,
-            success=False,
-            changes=[],
-            error=f"File not found: {file_path}"
-        )
-
-    changes = []
-
-    try:
-        # Run isort
-        isort_args = ["isort", str(path)]
-        if check_only:
-            isort_args.append("--check-only")
-        isort_result = subprocess.run(isort_args, capture_output=True, text=True)
-
-        if isort_result.returncode == 0 and not check_only:
-            changes.append("imports sorted")
-
-        # Run Black
-        black_args = ["black", str(path)]
-        if check_only:
-            black_args.append("--check")
-        black_result = subprocess.run(black_args, capture_output=True, text=True)
-
-        if "reformatted" in black_result.stderr:
-            changes.append("code reformatted")
-
-        return FormatResult(file=file_path, success=True, changes=changes)
-
-    except FileNotFoundError as e:
-        return FormatResult(
-            file=file_path,
-            success=False,
-            changes=[],
-            error=f"Formatter not found: {e}"
-        )</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Audit Logging</h3>
-                <p class="mb-4">All MCP calls should be logged for audit purposes:</p>
-                <pre><code class="language-python"># src/cli_generator/mcp/audit.py
-
-import json
-from datetime import datetime
-from pathlib import Path
-from dataclasses import dataclass, asdict
-from typing import Any
-
-
-AUDIT_LOG = Path("./data/mcp_audit.jsonl")
-
-
-@dataclass
-class AuditEntry:
-    timestamp: str
-    tool: str
-    inputs: dict
-    outputs: dict
-    success: bool
-    duration_ms: int
-    user: str | None = None
-
-
-def log_mcp_call(
-    tool: str,
-    inputs: dict,
-    outputs: dict,
-    success: bool,
-    duration_ms: int,
-    user: str | None = None
-):
-    """Log MCP tool call for audit."""
-
-    entry = AuditEntry(
-        timestamp=datetime.now().isoformat(),
-        tool=tool,
-        inputs=_sanitize_inputs(inputs),
-        outputs=_summarize_outputs(outputs),
-        success=success,
-        duration_ms=duration_ms,
-        user=user
-    )
-
-    AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(AUDIT_LOG, "a") as f:
-        f.write(json.dumps(asdict(entry)) + "\n")
-
-
-def _sanitize_inputs(inputs: dict) -> dict:
-    """Remove sensitive data from inputs."""
-    sanitized = inputs.copy()
-    sensitive_keys = ["token", "password", "secret", "key", "credential"]
-
-    for key in list(sanitized.keys()):
-        if any(s in key.lower() for s in sensitive_keys):
-            sanitized[key] = "[REDACTED]"
-
-    return sanitized</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">MCP Wrapper with Audit</h3>
-                <pre><code class="language-python"># src/cli_generator/mcp/__init__.py
-
-import time
-from functools import wraps
-from typing import Callable, Any
-
-from .audit import log_mcp_call
-
-
-def mcp_tool(tool_name: str):
-    """Decorator for MCP tools that adds audit logging."""
-
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        async def wrapper(*args, **kwargs) -> Any:
-            start_time = time.time()
-            inputs = {"args": args, "kwargs": kwargs}
-
-            try:
-                result = await func(*args, **kwargs)
-                duration_ms = int((time.time() - start_time) * 1000)
-
-                log_mcp_call(
-                    tool=tool_name,
-                    inputs=inputs,
-                    outputs=result if isinstance(result, dict) else {"result": result},
-                    success=True,
-                    duration_ms=duration_ms
-                )
-
-                return result
-
-            except Exception as e:
-                duration_ms = int((time.time() - start_time) * 1000)
-
-                log_mcp_call(
-                    tool=tool_name,
-                    inputs=inputs,
-                    outputs={"error": str(e)},
-                    success=False,
-                    duration_ms=duration_ms
-                )
-
-                raise
-
-        return wrapper
-    return decorator
-
-
-# Usage example:
-# @mcp_tool("pypi_check_name")
-# async def pypi_check_name(name: str) -> PyPICheckResult:
-#     ...</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Testing MCP Tools</h3>
-                <pre><code class="language-python"># tests/unit/test_mcp.py
-
-import pytest
-from unittest.mock import AsyncMock, patch
-
-from cli_generator.mcp.pypi import pypi_check_name, PyPICheckResult
-from cli_generator.mcp.dependencies import validate_dependencies
-
-
-class TestPyPIChecker:
-    """Tests for PyPI name checker."""
-
-    @pytest.mark.asyncio
-    async def test_available_name(self):
-        """Should detect available names."""
-        with patch('httpx.AsyncClient') as mock_client:
-            mock_response = AsyncMock()
-            mock_response.status_code = 404
-            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-                return_value=mock_response
-            )
-
-            result = await pypi_check_name("my-unique-cli-name-12345")
-
-            assert result.available is True
-
-    @pytest.mark.asyncio
-    async def test_taken_name(self):
-        """Should detect taken names."""
-        with patch('httpx.AsyncClient') as mock_client:
-            mock_response = AsyncMock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "info": {
-                    "version": "1.0.0",
-                    "summary": "An existing package"
-                }
-            }
-            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-                return_value=mock_response
-            )
-
-            result = await pypi_check_name("requests")
-
-            assert result.available is False
-            assert result.existing_version == "1.0.0"</code></pre>
+                <h3 class="text-xl font-semibold mt-8 mb-3">Adding MCP Servers</h3>
+                <p class="mb-4">There are two ways to add MCP servers: CLI commands or configuration files.</p>
+
+                <h4 class="text-lg font-semibold mt-6 mb-3">Method 1: CLI Commands</h4>
+                <pre><code class="language-bash"># Add an HTTP-based MCP server (remote API)
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/
+
+# Add a stdio-based MCP server (local npm package)
+claude mcp add --transport stdio filesystem -- npx -y @anthropic/mcp-server-filesystem
+
+# Add with environment variables
+claude mcp add --transport stdio db --env DB_URL=postgres://localhost/mydb \
+  -- npx -y @bytebase/dbhub
+
+# List all configured servers
+claude mcp list
+
+# Remove a server
+claude mcp remove github</code></pre>
+
+                <h4 class="text-lg font-semibold mt-6 mb-3">Method 2: Configuration File (.mcp.json)</h4>
+                <p class="mb-4">Create <code>.mcp.json</code> in your project root (this gets checked into git for team sharing):</p>
+                <pre><code class="language-json">{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-filesystem", "/path/to/allowed/dir"],
+      "env": {}
+    },
+    "database": {
+      "command": "npx",
+      "args": ["-y", "@bytebase/dbhub"],
+      "env": {
+        "DB_URL": "${DATABASE_URL}"
+      }
+    }
+  }
+}</code></pre>
+
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 my-4">
+                    <p class="font-semibold mb-2">Environment Variable Expansion</p>
+                    <p class="text-sm">Use <code>${VAR}</code> syntax in .mcp.json to reference environment variables. Use <code>${VAR:-default}</code> for defaults.</p>
+                </div>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Transport Types</h3>
+                <table class="w-full text-sm mb-6 border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 dark:bg-gray-800">
+                            <th class="border p-2 text-left">Transport</th>
+                            <th class="border p-2 text-left">Use Case</th>
+                            <th class="border p-2 text-left">Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="border p-2 font-mono">http</td>
+                            <td class="border p-2">Remote cloud APIs, SaaS integrations</td>
+                            <td class="border p-2">GitHub, Notion, Sentry</td>
+                        </tr>
+                        <tr>
+                            <td class="border p-2 font-mono">stdio</td>
+                            <td class="border p-2">Local tools, npm packages, scripts</td>
+                            <td class="border p-2">Filesystem, database, custom tools</td>
+                        </tr>
+                        <tr>
+                            <td class="border p-2 font-mono">sse</td>
+                            <td class="border p-2">Server-sent events (deprecated)</td>
+                            <td class="border p-2">Legacy streaming APIs</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Configuration Scopes</h3>
+                <p class="mb-4">MCP servers can be configured at different scopes:</p>
+                <table class="w-full text-sm mb-6 border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 dark:bg-gray-800">
+                            <th class="border p-2 text-left">Scope</th>
+                            <th class="border p-2 text-left">Location</th>
+                            <th class="border p-2 text-left">Visibility</th>
+                            <th class="border p-2 text-left">Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="border p-2 font-mono">project</td>
+                            <td class="border p-2"><code>.mcp.json</code></td>
+                            <td class="border p-2">Team (via git)</td>
+                            <td class="border p-2">Shared team tools</td>
+                        </tr>
+                        <tr>
+                            <td class="border p-2 font-mono">local</td>
+                            <td class="border p-2"><code>~/.claude.json</code></td>
+                            <td class="border p-2">Only you, this project</td>
+                            <td class="border p-2">Personal/experimental</td>
+                        </tr>
+                        <tr>
+                            <td class="border p-2 font-mono">user</td>
+                            <td class="border p-2"><code>~/.claude.json</code></td>
+                            <td class="border p-2">Only you, all projects</td>
+                            <td class="border p-2">Personal tools everywhere</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <pre><code class="language-bash"># Add to specific scope
+claude mcp add --scope project --transport http github https://api.github.com/mcp
+claude mcp add --scope user --transport stdio notes -- npx -y notes-mcp</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Managing MCP Servers</h3>
+                <p class="mb-4">Use the <code>/mcp</code> command in Claude Code to manage servers interactively:</p>
+                <pre><code class="language-bash"># In Claude Code, type:
+/mcp
+
+# This opens an interactive menu to:
+# - View all connected servers
+# - Authenticate with OAuth servers
+# - See available tools from each server
+# - Troubleshoot connection issues</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Permissions and Approvals</h3>
+                <p class="mb-4">Project-scoped MCP servers (from <code>.mcp.json</code>) require user approval before first use. Configure approval behavior in settings:</p>
+                <pre><code class="language-json">{
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": ["github", "filesystem"],
+  "disabledMcpjsonServers": ["dangerous-server"]
+}</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Popular MCP Servers</h3>
+                <p class="mb-4">Here are some commonly used MCP servers you can add to your projects:</p>
+                <table class="w-full text-sm mb-6 border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 dark:bg-gray-800">
+                            <th class="border p-2 text-left">Server</th>
+                            <th class="border p-2 text-left">Purpose</th>
+                            <th class="border p-2 text-left">Add Command</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="border p-2 font-semibold">GitHub</td>
+                            <td class="border p-2">PRs, issues, code review</td>
+                            <td class="border p-2 font-mono text-xs">claude mcp add --transport http github https://api.githubcopilot.com/mcp/</td>
+                        </tr>
+                        <tr>
+                            <td class="border p-2 font-semibold">Filesystem</td>
+                            <td class="border p-2">Safe file access</td>
+                            <td class="border p-2 font-mono text-xs">claude mcp add --transport stdio fs -- npx -y @anthropic/mcp-server-filesystem ./</td>
+                        </tr>
+                        <tr>
+                            <td class="border p-2 font-semibold">PostgreSQL</td>
+                            <td class="border p-2">Database queries</td>
+                            <td class="border p-2 font-mono text-xs">claude mcp add --transport stdio db -- npx -y @bytebase/dbhub --dsn "..."</td>
+                        </tr>
+                        <tr>
+                            <td class="border p-2 font-semibold">Sentry</td>
+                            <td class="border p-2">Error monitoring</td>
+                            <td class="border p-2 font-mono text-xs">claude mcp add --transport http sentry https://mcp.sentry.dev/mcp</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Find more servers at <a href="https://github.com/modelcontextprotocol/servers" class="text-primary hover:underline">github.com/modelcontextprotocol/servers</a></p>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Hands-On Exercises</h3>
+                <p class="mb-4">Now let's practice adding and using MCP servers.</p>
+
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 mb-6 border border-blue-200 dark:border-blue-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                        Exercise: Add Your First MCP Server
+                    </h4>
+                    <p class="mb-4 text-sm">Add the filesystem MCP server to safely give Claude access to a directory:</p>
+                    <pre class="mb-4"><code class="language-bash"># Add filesystem server (stdio transport)
+claude mcp add --transport stdio filesystem -- npx -y @anthropic/mcp-server-filesystem ./generated
+
+# Verify it was added
+claude mcp list</code></pre>
+                    <p class="mb-3 text-sm"><strong>Expected output:</strong></p>
+                    <div class="bg-gray-900 text-gray-100 rounded-lg p-4 text-sm font-mono mb-4">
+                        <div class="text-green-400">✓ Added MCP server: filesystem</div>
+                        <div class="text-gray-400 mt-2">Configured servers:</div>
+                        <div class="text-gray-300">  • filesystem (stdio) - npx -y @anthropic/mcp-server-filesystem ./generated</div>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>What this does:</strong> Claude can now safely read/write files in the <code>./generated</code> directory through the MCP filesystem server.</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 mb-6 border border-green-200 dark:border-green-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                        Exercise: Create a Project MCP Configuration
+                    </h4>
+                    <p class="mb-4 text-sm">Create a <code>.mcp.json</code> file to share MCP configuration with your team:</p>
+                    <pre class="mb-4"><code class="language-bash"># Create .mcp.json in project root
+cat > .mcp.json << 'EOF'
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-filesystem", "./generated"],
+      "env": {}
+    }
+  }
+}
+EOF
+
+echo "✓ Created .mcp.json"
+cat .mcp.json</code></pre>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-4"><strong>Key point:</strong> This file should be committed to git so your team shares the same MCP configuration.</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 mb-6 border border-purple-200 dark:border-purple-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
+                        Exercise: Use the /mcp Command
+                    </h4>
+                    <p class="mb-4 text-sm">In Claude Code, use the <code>/mcp</code> command to view and manage servers:</p>
+                    <pre class="mb-4"><code class="language-bash"># In Claude Code, type:
+/mcp</code></pre>
+                    <p class="mb-3 text-sm"><strong>What you'll see:</strong></p>
+                    <div class="bg-gray-900 text-gray-100 rounded-lg p-4 text-sm font-mono mb-4">
+                        <div class="text-yellow-400">MCP Server Status</div>
+                        <div class="text-gray-300 mt-2">Connected servers:</div>
+                        <div class="text-green-400">  ✓ filesystem - @anthropic/mcp-server-filesystem</div>
+                        <div class="text-gray-300 mt-2">Available tools:</div>
+                        <div class="text-gray-400">  • read_file - Read contents of a file</div>
+                        <div class="text-gray-400">  • write_file - Write contents to a file</div>
+                        <div class="text-gray-400">  • list_directory - List files in directory</div>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Try it:</strong> Ask Claude to "list the files in the generated directory using the filesystem MCP server"</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 mb-6 border border-orange-200 dark:border-orange-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">4</span>
+                        Exercise: Add GitHub MCP Server (Optional)
+                    </h4>
+                    <p class="mb-4 text-sm">If you want to integrate with GitHub, add the GitHub MCP server:</p>
+                    <pre class="mb-4"><code class="language-bash"># Add GitHub MCP server (HTTP transport)
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/
+
+# In Claude Code, authenticate:
+/mcp
+# Select GitHub and follow the OAuth flow</code></pre>
+                    <p class="mb-3 text-sm"><strong>After authentication, you can:</strong></p>
+                    <pre class="mb-4"><code class="language-markdown"># Ask Claude to use GitHub tools:
+"Create a GitHub issue for the bug we found in the convert command"
+"Review PR #123 and suggest improvements"
+"List my open pull requests"</code></pre>
+                    <div class="bg-yellow-100 dark:bg-yellow-900/30 rounded-lg p-3 mt-4">
+                        <p class="text-sm"><strong>Note:</strong> GitHub MCP requires authentication. The /mcp command will guide you through OAuth login.</p>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-xl p-6 mb-6 border border-red-200 dark:border-red-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">5</span>
+                        Exercise: Use MCP in Your CLI Workflow
+                    </h4>
+                    <p class="mb-4 text-sm">Now combine MCP with your CLI generator workflow:</p>
+                    <pre class="mb-4"><code class="language-markdown"># In Claude Code, try this workflow:
+"Design a CLI called 'notes-cli' for managing markdown notes.
+After generating the code, use the filesystem MCP to write it to ./generated/notes-cli/"</code></pre>
+                    <p class="mb-3 text-sm"><strong>What happens:</strong></p>
+                    <ol class="list-decimal list-inside text-sm space-y-2 mb-4">
+                        <li>Claude designs the CLI specification</li>
+                        <li>Claude generates the Python code</li>
+                        <li>Claude uses the <strong>filesystem MCP server</strong> to write files</li>
+                        <li>Files appear in <code>./generated/notes-cli/</code></li>
+                    </ol>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Verify:</strong> Check that the files were created: <code>ls -la ./generated/notes-cli/</code></p>
+                </div>
+
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-xl p-6 mb-6">
+                    <h4 class="text-lg font-semibold mb-3">Troubleshooting MCP</h4>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">Server not connecting?</p>
+                            <p class="text-gray-600 dark:text-gray-400">Check that npx can run the package: <code>npx -y @anthropic/mcp-server-filesystem --help</code>. Ensure Node.js is installed.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">Permission denied for project .mcp.json?</p>
+                            <p class="text-gray-600 dark:text-gray-400">Project MCP servers require approval on first use. Run <code>/mcp</code> and approve the server, or set <code>"enableAllProjectMcpServers": true</code> in settings.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">OAuth authentication failing?</p>
+                            <p class="text-gray-600 dark:text-gray-400">Use <code>/mcp</code> to re-authenticate. Check that your browser can open the OAuth URL. Try removing and re-adding the server.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">Environment variables not working?</p>
+                            <p class="text-gray-600 dark:text-gray-400">In .mcp.json, use <code>${VAR}</code> syntax. Ensure the variable is exported: <code>export DATABASE_URL=...</code></p>
+                        </div>
+                    </div>
+                </div>
 
                 <h3 class="text-xl font-semibold mt-8 mb-3">Day 8 Checklist</h3>
                 <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                    <div class="checklist-item"><input type="checkbox" id="d8-1" @change="saveChecklist('d8-1', $event.target.checked)" :checked="checklist['d8-1']"><label for="d8-1">PyPI name checker implemented and tested</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d8-2" @change="saveChecklist('d8-2', $event.target.checked)" :checked="checklist['d8-2']"><label for="d8-2">GitHub repo creator with approval workflow</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d8-3" @change="saveChecklist('d8-3', $event.target.checked)" :checked="checklist['d8-3']"><label for="d8-3">Dependency validator working</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d8-4" @change="saveChecklist('d8-4', $event.target.checked)" :checked="checklist['d8-4']"><label for="d8-4">Code formatter integrated</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d8-5" @change="saveChecklist('d8-5', $event.target.checked)" :checked="checklist['d8-5']"><label for="d8-5">Audit logging for all MCP calls</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d8-6" @change="saveChecklist('d8-6', $event.target.checked)" :checked="checklist['d8-6']"><label for="d8-6">MCP decorator for automatic logging</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d8-7" @change="saveChecklist('d8-7', $event.target.checked)" :checked="checklist['d8-7']"><label for="d8-7">Successfully used at least 2 MCP tools in workflow</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d8-1" @change="saveChecklist('d8-1', $event.target.checked)" :checked="checklist['d8-1']"><label for="d8-1">Understand MCP is a protocol for external servers</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d8-2" @change="saveChecklist('d8-2', $event.target.checked)" :checked="checklist['d8-2']"><label for="d8-2">Added filesystem MCP server using CLI</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d8-3" @change="saveChecklist('d8-3', $event.target.checked)" :checked="checklist['d8-3']"><label for="d8-3">Created .mcp.json configuration file</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d8-4" @change="saveChecklist('d8-4', $event.target.checked)" :checked="checklist['d8-4']"><label for="d8-4">Used /mcp command to view servers</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d8-5" @change="saveChecklist('d8-5', $event.target.checked)" :checked="checklist['d8-5']"><label for="d8-5">Successfully used MCP tools in a workflow</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d8-6" @change="saveChecklist('d8-6', $event.target.checked)" :checked="checklist['d8-6']"><label for="d8-6">Understand transport types (http vs stdio)</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d8-7" @change="saveChecklist('d8-7', $event.target.checked)" :checked="checklist['d8-7']"><label for="d8-7">Understand configuration scopes (project/local/user)</label></div>
                 </div>
                 <div class="flex justify-end mt-6"><button @click="toggleDay(8)" :class="completedDays.includes(8) ? 'bg-green-500' : 'bg-primary'" class="px-6 py-2 text-white rounded-lg hover:opacity-90"><span x-text="completedDays.includes(8) ? 'Completed!' : 'Mark as Complete'"></span></button></div>
             </section>
@@ -6477,897 +6467,378 @@ claude plugins install claude-mem@thedotmack</code></pre>
             <!-- Day Divider -->
             <div class="day-divider"><div class="day-divider-dot"></div></div>
 
-            <!-- Day 10 - Testing & Packaging -->
+            <!-- Day 10 - Plugin Packaging -->
             <section id="day-10" class="day-section week-2" x-intersect:enter="currentSection = 'day-10'">
                 <div class="flex items-center justify-between mb-4">
                     <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-full">Day 5 of 5</span>
-                    <button @click="toggleBookmark('day-10', 'Day 10: Testing & Packaging')" :class="isBookmarked('day-10') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
+                    <button @click="toggleBookmark('day-10', 'Day 10: Plugin Packaging')" :class="isBookmarked('day-10') ? 'text-primary' : 'text-gray-400'" class="p-1 hover:scale-110 transition-transform">
                         <svg class="w-6 h-6" :fill="isBookmarked('day-10') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                     </button>
                 </div>
-                <h2 class="text-3xl font-bold mb-2">Day 10: Testing & Packaging</h2>
+                <h2 class="text-3xl font-bold mb-2">Day 10: Plugin Packaging</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Day 10 of 14 • Week 2: Intelligence</p>
 
                 <h3 class="text-xl font-semibold mb-3">Learning Objectives</h3>
                 <ul class="list-disc list-inside mb-6 space-y-1">
-                    <li>Test the complete workflow end-to-end</li>
-                    <li>Verify all components work together</li>
-                    <li>Create golden tests for regression prevention</li>
-                    <li>Package your Claude Code constructs for sharing</li>
+                    <li>Understand Claude Code plugin architecture</li>
+                    <li>Create a plugin.json manifest</li>
+                    <li>Structure plugins correctly (.claude-plugin/ folder)</li>
+                    <li>Use CLI commands to manage plugins</li>
+                    <li>Test plugins during development</li>
                 </ul>
 
-                <h3 class="text-xl font-semibold mb-3">End-to-End Test Suite</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-4">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">tests/integration/test_full_workflow.py</code>:</p>
-                <pre><code class="language-python">"""End-to-end integration tests for CLI Generator."""
-
-import pytest
-import subprocess
-import ast
-import json
-from pathlib import Path
-import shutil
-
-from cli_generator.generators.spec_generator import SpecGenerator
-from cli_generator.generators.code_generator import CodeGenerator
-from cli_generator.models import CLISpec, CommandSpec, OptionSpec, ArgumentSpec
-from cli_generator.validators.spec_validator import validate_spec
-from cli_generator.validators.security_validator import check_code_security
-
-
-@pytest.fixture
-def temp_output_dir(tmp_path):
-    """Temporary directory for generated CLIs."""
-    output_dir = tmp_path / "generated"
-    output_dir.mkdir()
-    yield output_dir
-    shutil.rmtree(output_dir, ignore_errors=True)
-
-
-class TestFullWorkflow:
-    """Test complete CLI generation workflow."""
-
-    @pytest.mark.slow
-    @pytest.mark.asyncio
-    async def test_simple_cli_generation(self, temp_output_dir):
-        """Generate a simple CLI and verify it works."""
-
-        # Step 1: Generate spec
-        spec_gen = SpecGenerator()
-        spec = await spec_gen.generate(
-            "A tool to count words in text files"
-        )
-
-        # Verify spec
-        assert spec.name
-        assert len(spec.commands) >= 1
-
-        # Step 2: Validate spec
-        errors, warnings = validate_spec(spec)
-        assert len(errors) == 0, f"Spec validation errors: {errors}"
-
-        # Step 3: Generate code
-        code_gen = CodeGenerator()
-        files = code_gen.generate(spec, temp_output_dir)
-
-        assert "cli" in files
-        assert files["cli"].exists()
-
-        # Step 4: Verify code is valid Python
-        cli_content = files["cli"].read_text()
-        ast.parse(cli_content)  # Raises SyntaxError if invalid
-
-        # Step 5: Security check
-        security_issues = check_code_security(cli_content, "cli.py")
-        blocked = [i for i in security_issues if i.severity == "blocked"]
-        assert len(blocked) == 0, f"Security issues: {blocked}"
-
-        # Step 6: Verify pyproject.toml
-        pyproject_content = files["pyproject"].read_text()
-        assert spec.name in pyproject_content
-
-    @pytest.mark.slow
-    @pytest.mark.asyncio
-    async def test_cli_with_options(self, temp_output_dir):
-        """Test CLI with various option types."""
-
-        spec_gen = SpecGenerator()
-        spec = await spec_gen.generate(
-            "A file converter with --format choice (json, yaml, xml), "
-            "--output path, and --pretty flag"
-        )
-
-        # Verify options were captured
-        assert len(spec.commands) >= 1
-        cmd = spec.commands[0]
-        opt_names = [opt.name for opt in cmd.options]
-
-        # Should have some options
-        assert len(opt_names) > 0
-
-        # Generate and compile
-        code_gen = CodeGenerator()
-        files = code_gen.generate(spec, temp_output_dir)
-
-        # Verify syntax
-        cli_content = files["cli"].read_text()
-        ast.parse(cli_content)
-
-    @pytest.mark.slow
-    @pytest.mark.asyncio
-    async def test_multi_command_cli(self, temp_output_dir):
-        """Generate a CLI with multiple commands."""
-
-        spec_gen = SpecGenerator()
-        spec = await spec_gen.generate(
-            "A file manager with commands to list, copy, move, and delete files"
-        )
-
-        # Should have multiple commands
-        assert len(spec.commands) >= 2, "Should generate multiple commands"
-
-        # Generate and verify
-        code_gen = CodeGenerator()
-        files = code_gen.generate(spec, temp_output_dir)
-
-        cli_content = files["cli"].read_text()
-        ast.parse(cli_content)
-
-        # Each command should be in the generated code
-        for cmd in spec.commands:
-            assert f"def {cmd.name}(" in cli_content, f"Missing command: {cmd.name}"</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Hook Integration Tests</h3>
-                <pre><code class="language-python">class TestHookIntegration:
-    """Test hooks are called correctly during workflow."""
-
-    def test_spec_validation_hook_blocks_invalid(self):
-        """Verify spec validation catches issues."""
-
-        # Create invalid spec (duplicate commands)
-        spec = CLISpec(
-            name="test-cli",
-            description="Test",
-            commands=[
-                CommandSpec(name="list", description="List items"),
-                CommandSpec(name="list", description="List again"),  # Duplicate!
-            ]
-        )
-
-        errors, warnings = validate_spec(spec)
-        assert len(errors) > 0
-        assert any("duplicate" in e.lower() for e in errors)
-
-    def test_spec_validation_warns_on_delete(self):
-        """Delete commands should warn about confirmation."""
-
-        spec = CLISpec(
-            name="test-cli",
-            description="Test",
-            commands=[
-                CommandSpec(name="delete", description="Delete items"),
-            ]
-        )
-
-        errors, warnings = validate_spec(spec)
-        assert len(warnings) > 0
-        assert any("confirm" in w.lower() for w in warnings)
-
-    def test_security_hook_blocks_eval(self):
-        """Security check should block eval()."""
-
-        dangerous_code = '''
-@click.command()
-def run(code):
-    result = eval(code)  # Dangerous!
-    click.echo(result)
-'''
-        issues = check_code_security(dangerous_code, "test.py")
-        blocked = [i for i in issues if i.severity == "blocked"]
-
-        assert len(blocked) > 0
-        assert any("eval" in i.pattern.lower() for i in blocked)
-
-    def test_security_hook_blocks_shell_true(self):
-        """Security check should block shell=True."""
-
-        dangerous_code = '''
-import subprocess
-
-@click.command()
-def run(cmd):
-    subprocess.call(cmd, shell=True)
-'''
-        issues = check_code_security(dangerous_code, "test.py")
-        blocked = [i for i in issues if i.severity == "blocked"]
-
-        assert len(blocked) > 0
-        assert any("shell" in i.pattern.lower() for i in blocked)</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Skill Integration Tests</h3>
-                <pre><code class="language-python">class TestSkillIntegration:
-    """Test skills activate correctly during workflow."""
-
-    @pytest.mark.asyncio
-    async def test_pattern_suggester_activates(self):
-        """Pattern suggester should detect common patterns."""
-        from cli_generator.skills.pattern_suggester import suggest_patterns
-
-        suggestions = suggest_patterns(
-            "A tool to download files from URLs"
-        )
-
-        assert len(suggestions) > 0
-        # Should suggest download-related patterns
-        suggestion_text = str(suggestions).lower()
-        assert any(word in suggestion_text
-                   for word in ["resume", "retry", "concurrent", "progress"])
-
-    def test_naming_advisor_catches_issues(self):
-        """Naming advisor should catch convention violations."""
-        from cli_generator.skills.naming_advisor import check_option_naming
-
-        # camelCase option
-        opt = OptionSpec(name="outputFile", type="path", help="Output file")
-        suggestions = check_option_naming(opt)
-
-        assert len(suggestions) > 0
-        assert "output-file" in suggestions[0]
-
-    def test_example_generator_creates_examples(self):
-        """Example generator should create realistic examples."""
-        from cli_generator.skills.example_generator import generate_examples
-
-        cmd = CommandSpec(
-            name="convert",
-            description="Convert files",
-            arguments=[ArgumentSpec(name="input", type="path")],
-            options=[OptionSpec(name="output", short="o", type="path")]
-        )
-
-        examples = generate_examples(cmd, "tool")
-
-        assert len(examples) >= 1
-        assert "tool convert" in examples[0]</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">MCP Integration Tests</h3>
-                <pre><code class="language-python">class TestMCPIntegration:
-    """Test MCP tools work correctly."""
-
-    @pytest.mark.asyncio
-    async def test_dependency_validation(self):
-        """Dependency validator should check packages."""
-        from cli_generator.mcp.dependencies import validate_dependencies
-
-        # This test might hit real PyPI - consider mocking
-        results = await validate_dependencies(["click>=8.1"])
-
-        assert len(results) == 1
-        # click exists and should be ok
-        assert results[0].name == "click"</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Build From Spec Tests</h3>
-                <pre><code class="language-python">class TestBuildFromSpec:
-    """Test building from saved specification files."""
-
-    def test_build_from_json_spec(self, temp_output_dir):
-        """Build CLI from a saved JSON spec file."""
-
-        # Create spec manually
-        spec = CLISpec(
-            name="test-tool",
-            description="A test tool",
-            commands=[
-                CommandSpec(
-                    name="run",
-                    description="Run the tool",
-                    options=[
-                        OptionSpec(name="verbose", short="v", type="bool")
-                    ]
-                )
-            ]
-        )
-
-        # Save to file
-        spec_file = temp_output_dir / "spec.json"
-        spec_file.write_text(spec.model_dump_json(indent=2))
-
-        # Load and verify
-        loaded_spec = CLISpec.model_validate_json(spec_file.read_text())
-        assert loaded_spec.name == "test-tool"
-        assert len(loaded_spec.commands) == 1
-
-        # Generate code
-        code_gen = CodeGenerator()
-        files = code_gen.generate(loaded_spec, temp_output_dir)
-
-        assert files["cli"].exists()
-        cli_content = files["cli"].read_text()
-        assert "def run(" in cli_content
-        assert "--verbose" in cli_content</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Golden Tests</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-4">Golden tests compare outputs against known-good examples to catch regressions.</p>
-
-                <h4 class="text-lg font-semibold mb-3">Directory Structure</h4>
-                <pre><code class="language-bash">tests/golden/
-├── fixtures/
-│   ├── simple_counter/
-│   │   ├── input.txt
-│   │   └── expected_spec.json
-│   ├── file_converter/
-│   │   ├── input.txt
-│   │   └── expected_spec.json
-│   └── multi_command/
-│       ├── input.txt
-│       └── expected_spec.json
-└── test_golden.py</code></pre>
-
-                <h4 class="text-lg font-semibold mt-6 mb-3">Golden Fixture: Simple Counter</h4>
-                <p class="text-gray-600 dark:text-gray-400 mb-2">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">tests/golden/fixtures/simple_counter/input.txt</code>:</p>
-                <pre><code class="language-text">A simple tool to count words, lines, and characters in text files</code></pre>
-
-                <p class="text-gray-600 dark:text-gray-400 mt-4 mb-2">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">tests/golden/fixtures/simple_counter/expected_spec.json</code>:</p>
-                <pre><code class="language-json">{
-  "name": "word-counter",
-  "description": "Count words, lines, and characters in text files",
-  "version": "0.1.0",
-  "commands": [
-    {
-      "name": "count",
-      "description": "Count words, lines, and characters in a file",
-      "arguments": [
-        {
-          "name": "file",
-          "type": "path",
-          "required": true,
-          "help": "File to count"
-        }
-      ],
-      "options": [
-        {
-          "name": "words",
-          "short": "w",
-          "type": "bool",
-          "required": false,
-          "help": "Count words"
-        },
-        {
-          "name": "lines",
-          "short": "l",
-          "type": "bool",
-          "required": false,
-          "help": "Count lines"
-        },
-        {
-          "name": "chars",
-          "short": "c",
-          "type": "bool",
-          "required": false,
-          "help": "Count characters"
-        }
-      ],
-      "examples": [
-        "word-counter count document.txt",
-        "word-counter count document.txt -w -l"
-      ]
-    }
-  ],
-  "dependencies": []
-}</code></pre>
-
-                <h4 class="text-lg font-semibold mt-6 mb-3">Golden Test Implementation</h4>
-                <p class="text-gray-600 dark:text-gray-400 mb-2">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">tests/golden/test_golden.py</code>:</p>
-                <pre><code class="language-python">"""Golden tests for CLI Generator.
-
-These tests verify that the generator produces consistent, expected output
-for known inputs. They help catch regressions when making changes.
-"""
-
-import pytest
-import json
-from pathlib import Path
-
-from cli_generator.generators.spec_generator import SpecGenerator
-from cli_generator.generators.code_generator import CodeGenerator
-from cli_generator.models import CLISpec
-
-GOLDEN_DIR = Path(__file__).parent / "fixtures"
-
-
-def get_test_cases():
-    """Discover all golden test cases."""
-    cases = []
-    for case_dir in GOLDEN_DIR.iterdir():
-        if case_dir.is_dir() and (case_dir / "input.txt").exists():
-            cases.append(case_dir.name)
-    return cases
-
-
-class TestGoldenSpecs:
-    """Test that spec generation matches expected output."""
-
-    @pytest.mark.slow
-    @pytest.mark.parametrize("test_case", get_test_cases())
-    @pytest.mark.asyncio
-    async def test_spec_generation_matches_golden(self, test_case):
-        """Verify spec generation produces expected structure."""
-
-        case_dir = GOLDEN_DIR / test_case
-        input_text = (case_dir / "input.txt").read_text().strip()
-        expected_spec = json.loads(
-            (case_dir / "expected_spec.json").read_text()
-        )
-
-        # Generate spec
-        spec_gen = SpecGenerator()
-        actual_spec = await spec_gen.generate(input_text)
-
-        # Compare key structural elements
-        # (Not exact match because LLM output varies)
-
-        # Name should be similar
-        assert actual_spec.name, "Generated spec should have a name"
-
-        # Command count should match
-        assert len(actual_spec.commands) == len(expected_spec["commands"]), \
-            f"Expected {len(expected_spec['commands'])} commands, " \
-            f"got {len(actual_spec.commands)}"
-
-        # Each command should exist with similar structure
-        expected_cmd_names = {cmd["name"] for cmd in expected_spec["commands"]}
-        actual_cmd_names = {cmd.name for cmd in actual_spec.commands}
-
-        # Allow for slight naming variations
-        assert len(actual_cmd_names) == len(expected_cmd_names), \
-            "Command count should match"
-
-
-class TestGoldenCode:
-    """Test that code generation produces valid output."""
-
-    @pytest.mark.parametrize("test_case", get_test_cases())
-    def test_code_generation_compiles(self, test_case, tmp_path):
-        """Verify generated code is valid Python."""
-
-        case_dir = GOLDEN_DIR / test_case
-        spec_data = json.loads(
-            (case_dir / "expected_spec.json").read_text()
-        )
-        spec = CLISpec(**spec_data)
-
-        # Generate code
-        code_gen = CodeGenerator()
-        files = code_gen.generate(spec, tmp_path)
-
-        # Verify all Python files compile
-        import py_compile
-        for path in files.values():
-            if path.suffix == ".py":
-                py_compile.compile(str(path), doraise=True)
-
-    @pytest.mark.parametrize("test_case", get_test_cases())
-    def test_generated_cli_has_help(self, test_case, tmp_path):
-        """Verify generated CLI has help text."""
-
-        case_dir = GOLDEN_DIR / test_case
-        spec_data = json.loads(
-            (case_dir / "expected_spec.json").read_text()
-        )
-        spec = CLISpec(**spec_data)
-
-        # Generate code
-        code_gen = CodeGenerator()
-        files = code_gen.generate(spec, tmp_path)
-
-        # Check help text is in the generated code
-        cli_content = files["cli"].read_text()
-        assert spec.description in cli_content or \
-               spec.description.lower() in cli_content.lower(), \
-               "Description should be in generated code"
-
-
-class TestGoldenConsistency:
-    """Test that repeated generation produces consistent output."""
-
-    @pytest.mark.parametrize("test_case", ["simple_counter"])
-    def test_code_generation_is_deterministic(self, test_case, tmp_path):
-        """Code generation should be deterministic for same input."""
-
-        case_dir = GOLDEN_DIR / test_case
-        spec_data = json.loads(
-            (case_dir / "expected_spec.json").read_text()
-        )
-        spec = CLISpec(**spec_data)
-
-        code_gen = CodeGenerator()
-
-        # Generate twice
-        dir1 = tmp_path / "gen1"
-        dir2 = tmp_path / "gen2"
-        dir1.mkdir()
-        dir2.mkdir()
-
-        files1 = code_gen.generate(spec, dir1)
-        files2 = code_gen.generate(spec, dir2)
-
-        # CLI content should be identical
-        cli1 = files1["cli"].read_text()
-        cli2 = files2["cli"].read_text()
-
-        # Remove timestamps that might differ
-        import re
-        cli1_clean = re.sub(r'Generated.*\d{4}', 'Generated [DATE]', cli1)
-        cli2_clean = re.sub(r'Generated.*\d{4}', 'Generated [DATE]', cli2)
-
-        assert cli1_clean == cli2_clean, \
-            "Code generation should be deterministic"</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Running All Tests</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-2">Create a comprehensive test runner script <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">scripts/test_all.sh</code>:</p>
-                <pre><code class="language-bash">#!/bin/bash
-# scripts/test_all.sh
-
-echo "Running CLI Generator Test Suite"
-echo "================================"
-echo
-
-# Unit tests
-echo "1. Unit Tests"
-echo "-------------"
-uv run pytest tests/unit/ -v --tb=short
-UNIT_EXIT=$?
-
-# Integration tests (skip slow by default)
-echo
-echo "2. Integration Tests (fast)"
-echo "--------------------------"
-uv run pytest tests/integration/ -v --tb=short -m "not slow"
-INTEGRATION_EXIT=$?
-
-# Golden tests
-echo
-echo "3. Golden Tests"
-echo "---------------"
-uv run pytest tests/golden/ -v --tb=short -m "not slow"
-GOLDEN_EXIT=$?
-
-# Summary
-echo
-echo "================================"
-echo "Test Summary"
-echo "================================"
-echo "Unit tests:        $([ $UNIT_EXIT -eq 0 ] && echo 'PASSED' || echo 'FAILED')"
-echo "Integration tests: $([ $INTEGRATION_EXIT -eq 0 ] && echo 'PASSED' || echo 'FAILED')"
-echo "Golden tests:      $([ $GOLDEN_EXIT -eq 0 ] && echo 'PASSED' || echo 'FAILED')"
-
-# Full test with slow tests
-if [ "$1" == "--full" ]; then
-    echo
-    echo "4. Slow Tests (LLM calls)"
-    echo "------------------------"
-    uv run pytest tests/ -v --tb=short -m "slow"
-fi
-
-# Exit with failure if any test suite failed
-[ $UNIT_EXIT -eq 0 ] && [ $INTEGRATION_EXIT -eq 0 ] && [ $GOLDEN_EXIT -eq 0 ]</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">Plugin Packaging</h3>
-                <p class="mb-4">Now let's package everything as a distributable plugin.</p>
+                <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 my-4">
+                    <p class="font-semibold mb-2">What Are Plugins?</p>
+                    <p class="text-sm">Plugins extend Claude Code with custom commands, agents, hooks, skills, and MCP servers. They can be shared through plugin marketplaces. The official Anthropic marketplace is available by default.</p>
+                </div>
+
+                <p class="mb-4">Now let's package everything you've built as a distributable plugin that others can install.</p>
 
                 <h4 class="text-lg font-semibold mb-3">Plugin Structure</h4>
-                <p class="text-gray-600 dark:text-gray-400 mb-4">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">.claude/plugins/cli-generator/</code>:</p>
-                <pre><code class="language-bash">.claude/plugins/cli-generator/
-├── plugin.yaml           # Plugin manifest
-├── README.md             # Plugin documentation
-├── requirements.txt      # Python dependencies
-├── install.md            # Installation instructions
-├── commands/
+                <p class="text-gray-600 dark:text-gray-400 mb-4"><strong>Important:</strong> Only <code>plugin.json</code> goes inside <code>.claude-plugin/</code>. All other directories are at the plugin root:</p>
+                <pre><code class="language-bash">cli-generator-plugin/
+├── .claude-plugin/
+│   └── plugin.json           # Plugin manifest (ONLY this file here)
+├── commands/                 # Slash commands (at root level)
 │   ├── design.md
 │   ├── generate.md
-│   ├── refine.md
 │   ├── implement.md
 │   ├── test.md
 │   ├── new-cli.md
-│   ├── save-spec.md
 │   └── add-command.md
+├── agents/                   # Specialized agents (at root level)
+│   ├── spec-designer.md
+│   ├── code-generator.md
+│   ├── test-writer.md
+│   └── code-reviewer.md
+├── skills/                   # Skills (directories with SKILL.md)
+│   ├── cli-generator-workflow/
+│   │   └── SKILL.md
+│   ├── enforcing-code-style/
+│   │   └── SKILL.md
+│   └── advising-test-coverage/
+│       └── SKILL.md
 ├── hooks/
-│   ├── validate_spec.md
-│   ├── validate_code.md
-│   ├── security_check.md
-│   └── coverage_check.md
-├── skills/
-│   ├── pattern_suggester.md
-│   ├── naming_advisor.md
-│   ├── example_generator.md
-│   └── dependency_detector.md
-├── subagents/
-│   ├── spec_designer.md
-│   ├── code_generator.md
-│   ├── test_writer.md
-│   ├── reviewer.md
-│   └── integrator.md
-└── mcp/
-    ├── pypi_checker.md
-    ├── github.md
-    ├── dependency_validator.md
-    └── formatter.md</code></pre>
+│   └── hooks.json            # Hook configurations (JSON, not .md)
+└── README.md</code></pre>
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Plugin Manifest</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-4">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">.claude/plugins/cli-generator/plugin.yaml</code>:</p>
-                <pre><code class="language-yaml">name: cli-generator
-version: 1.0.0
-description: Generate CLI tools from natural language descriptions
-author: Your Name
-license: MIT
-repository: https://github.com/yourusername/cli-generator
+                <h3 class="text-xl font-semibold mt-8 mb-3">Plugin Manifest (plugin.json)</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">.claude-plugin/plugin.json</code>:</p>
+                <pre><code class="language-json">{
+  "name": "cli-generator",
+  "description": "Generate CLI tools from natural language descriptions",
+  "version": "1.0.0",
+  "author": {
+    "name": "Your Name"
+  },
+  "repository": "https://github.com/yourusername/cli-generator",
+  "license": "MIT",
+  "homepage": "https://github.com/yourusername/cli-generator#readme"
+}</code></pre>
 
-# Minimum requirements
-requires:
-  python: ">=3.11"
-  claude_code: ">=1.0"
+                <h4 class="text-lg font-semibold mt-6 mb-3">Manifest Fields Reference</h4>
+                <table class="w-full text-sm mb-6 border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 dark:bg-gray-800">
+                            <th class="border p-2 text-left">Field</th>
+                            <th class="border p-2 text-left">Required</th>
+                            <th class="border p-2 text-left">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="border p-2 font-mono">name</td><td class="border p-2">Yes</td><td class="border p-2">Plugin name (lowercase, becomes command prefix like <code>/cli-generator:design</code>)</td></tr>
+                        <tr><td class="border p-2 font-mono">description</td><td class="border p-2">Yes</td><td class="border p-2">What the plugin does</td></tr>
+                        <tr><td class="border p-2 font-mono">version</td><td class="border p-2">Yes</td><td class="border p-2">Semantic version (e.g., "1.0.0")</td></tr>
+                        <tr><td class="border p-2 font-mono">author</td><td class="border p-2">Yes</td><td class="border p-2">Object with <code>name</code> property</td></tr>
+                        <tr><td class="border p-2 font-mono">repository</td><td class="border p-2">No</td><td class="border p-2">Repository URL</td></tr>
+                        <tr><td class="border p-2 font-mono">mcpServers</td><td class="border p-2">No</td><td class="border p-2">MCP server configurations (see below)</td></tr>
+                        <tr><td class="border p-2 font-mono">hooks</td><td class="border p-2">No</td><td class="border p-2">Inline hook configurations</td></tr>
+                    </tbody>
+                </table>
 
-# Python dependencies
-dependencies:
-  - click>=8.1
-  - rich>=13.0
-  - pydantic>=2.0
-  - pydantic-ai>=0.1
-  - jinja2>=3.1
-  - httpx>=0.25
+                <h4 class="text-lg font-semibold mt-6 mb-3">Adding MCP Servers to Plugin</h4>
+                <p class="mb-4">Use <code>${CLAUDE_PLUGIN_ROOT}</code> to reference files within your plugin:</p>
+                <pre><code class="language-json">{
+  "name": "cli-generator",
+  "description": "Generate CLI tools from natural language descriptions",
+  "version": "1.0.0",
+  "author": { "name": "Your Name" },
+  "mcpServers": {
+    "pypi-checker": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/servers/pypi-checker",
+      "args": []
+    }
+  }
+}</code></pre>
 
-# Components included
-components:
-  commands:
-    - commands/design.md
-    - commands/generate.md
-    - commands/refine.md
-    - commands/implement.md
-    - commands/test.md
-    - commands/new-cli.md
-    - commands/save-spec.md
-    - commands/add-command.md
+                <h3 class="text-xl font-semibold mt-8 mb-3">Plugin CLI Commands</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">Claude Code provides built-in commands for plugin management:</p>
 
-  hooks:
-    - hooks/validate_spec.md
-    - hooks/validate_code.md
-    - hooks/security_check.md
-    - hooks/coverage_check.md
+                <h4 class="text-lg font-semibold mt-6 mb-3">Installing Plugins</h4>
+                <pre><code class="language-bash"># Install from a marketplace (user scope - available everywhere)
+claude plugin install cli-generator@my-marketplace
 
-  skills:
-    - skills/pattern_suggester.md
-    - skills/naming_advisor.md
-    - skills/example_generator.md
-    - skills/dependency_detector.md
+# Install for just this project (team can share via git)
+claude plugin install cli-generator@my-marketplace --scope project
 
-  subagents:
-    - subagents/spec_designer.md
-    - subagents/code_generator.md
-    - subagents/test_writer.md
-    - subagents/reviewer.md
-    - subagents/integrator.md
+# Install locally (gitignored, just for you)
+claude plugin install cli-generator@my-marketplace --scope local</code></pre>
 
-  mcp:
-    - mcp/pypi_checker.md
-    - mcp/github.md
-    - mcp/dependency_validator.md
-    - mcp/formatter.md
+                <h4 class="text-lg font-semibold mt-6 mb-3">Plugin Manager UI</h4>
+                <pre><code class="language-bash"># In Claude Code, open the plugin manager:
+/plugin
 
-# Configuration options
-configuration:
-  required:
-    - OPENAI_API_KEY    # For LLM-powered generation
-  optional:
-    - GITHUB_TOKEN      # For GitHub integration
-    - DEFAULT_OUTPUT_DIR: "./generated"
-    - PYTHON_VERSION: "3.11"
-    - CLI_FRAMEWORK: "click"  # Future: typer support
+# This opens a tabbed interface:
+# - Discover: Browse plugins from all registered marketplaces
+# - Installed: Manage your installed plugins
+# - Marketplaces: Add/remove marketplace sources</code></pre>
 
-# Keywords for discovery
-keywords:
-  - cli
-  - generator
-  - code-generation
-  - click
-  - python</code></pre>
+                <h4 class="text-lg font-semibold mt-6 mb-3">Adding Marketplaces</h4>
+                <pre><code class="language-bash"># Add a marketplace from various sources:
+/plugin marketplace add owner/repo              # GitHub repository
+/plugin marketplace add https://git.example.com/plugins.git  # Git URL
+/plugin marketplace add /path/to/local/marketplace  # Local directory</code></pre>
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Installation Instructions</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-4">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">.claude/plugins/cli-generator/install.md</code>:</p>
-                <pre><code class="language-markdown"># CLI Generator Plugin Installation
+                <h4 class="text-lg font-semibold mt-6 mb-3">Development Testing</h4>
+                <pre><code class="language-bash"># Test your plugin during development (without installing)
+claude code --plugin-dir /path/to/cli-generator-plugin
 
-## Prerequisites
+# This loads your plugin directly - restart Claude Code to pick up changes</code></pre>
 
-- Python 3.11 or higher
-- Claude Code installed
-- OpenAI API key (for LLM features)
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 my-4">
+                    <p class="font-semibold mb-2">Installation Scopes</p>
+                    <table class="w-full text-sm">
+                        <tr><td class="pr-4"><code>user</code> (default)</td><td>Available in all your projects</td></tr>
+                        <tr><td class="pr-4"><code>project</code></td><td>Shared with team via git</td></tr>
+                        <tr><td class="pr-4"><code>local</code></td><td>Just you, this project only</td></tr>
+                    </table>
+                </div>
 
-## Quick Install
+                <h3 class="text-xl font-semibold mt-8 mb-3">Plugin Hooks (hooks.json)</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">hooks/hooks.json</code> for plugin hooks:</p>
+                <pre><code class="language-json">{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m py_compile \"$CLAUDE_FILE_PATH\" 2>&1 || echo 'Syntax error in generated code'"
+          }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Hooks use the same format as <code>.claude/settings.json</code> hooks. Use <code>${CLAUDE_PLUGIN_ROOT}</code> to reference plugin files.</p>
 
-1. **Copy plugin to your project:**
-   ```bash
-   # From the cli-generator repository
-   cp -r .claude/plugins/cli-generator /your/project/.claude/plugins/
-   ```
+                <h3 class="text-xl font-semibold mt-8 mb-3">Plugin README.md</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">Every plugin should have a README explaining usage:</p>
+                <pre><code class="language-markdown"># CLI Generator Plugin
 
-2. **Install Python dependencies:**
-   ```bash
-   uv pip install -r .claude/plugins/cli-generator/requirements.txt
-   ```
+Generate complete CLI applications from natural language descriptions.
 
-3. **Set environment variables:**
-   ```bash
-   export OPENAI_API_KEY=your_key_here
+## Installation
 
-   # Optional: For GitHub integration
-   export GITHUB_TOKEN=your_github_token
-   ```
-
-4. **Verify installation:**
-   ```
-   # In Claude Code session
-   /design "A simple hello world CLI"
-   ```
-
-## Manual Install
-
-If you want to customize:
-
-1. Copy only the components you need:
-   ```bash
-   # Just commands
-   cp -r .claude/plugins/cli-generator/commands/* .claude/commands/
-
-   # Just hooks
-   cp -r .claude/plugins/cli-generator/hooks/* .claude/hooks/
-   ```
-
-2. Modify commands/hooks/skills as needed
-
-3. Update plugin.yaml to reflect changes
-
-## Configuration
-
-Create or update `.claude/config.yaml`:
-
-```yaml
-plugins:
-  cli-generator:
-    default_output_dir: "./my-clis"
-    python_version: "3.12"
-    include_tests: true
+```bash
+claude plugin install cli-generator@your-marketplace
 ```
 
-## Troubleshooting
+## Commands
 
-### Commands not found
-- Ensure files are in `.claude/plugins/cli-generator/commands/`
-- Check file names match command names
+After installation, commands are available with the `cli-generator:` prefix:
 
-### LLM errors
-- Verify OPENAI_API_KEY is set
-- Check API quota
+| Command | Description |
+|---------|-------------|
+| `/cli-generator:design &lt;desc&gt;` | Create CLI specification |
+| `/cli-generator:generate` | Generate code from design |
+| `/cli-generator:test` | Run tests for generated CLI |
 
-### Generated code doesn't compile
-- Update Python version in config
-- Check template syntax</code></pre>
+## Features
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Plugin Documentation (README.md)</h3>
-                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 mb-6">
-                    <h4 class="text-lg font-semibold mb-4">Features</h4>
-                    <ul class="list-disc list-inside space-y-1 mb-4">
-                        <li><strong>🗣️ Natural Language Input</strong>: Describe your CLI, get working code</li>
-                        <li><strong>⚡ Multiple Commands</strong>: Generate complex multi-command CLIs</li>
-                        <li><strong>🧪 Test Generation</strong>: Automatic pytest test creation</li>
-                        <li><strong>✅ Quality Checks</strong>: Validation hooks prevent common issues</li>
-                        <li><strong>💡 Smart Suggestions</strong>: Skills offer improvements as you work</li>
-                        <li><strong>🤖 Parallel Generation</strong>: Subagents work simultaneously</li>
-                        <li><strong>🔌 External Tools</strong>: PyPI checking, GitHub integration</li>
-                    </ul>
+- Natural language to working CLI code
+- Automatic test generation
+- Code quality validation hooks
+- Smart suggestions via skills</code></pre>
 
-                    <h4 class="text-lg font-semibold mb-3">Commands Reference</h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
-                                    <th class="text-left py-2">Command</th>
-                                    <th class="text-left py-2">Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b border-gray-200 dark:border-gray-700"><td class="py-2"><code>/design &lt;desc&gt;</code></td><td>Create CLI specification from description</td></tr>
-                                <tr class="border-b border-gray-200 dark:border-gray-700"><td class="py-2"><code>/generate</code></td><td>Generate code from current design</td></tr>
-                                <tr class="border-b border-gray-200 dark:border-gray-700"><td class="py-2"><code>/refine &lt;feedback&gt;</code></td><td>Modify current design</td></tr>
-                                <tr class="border-b border-gray-200 dark:border-gray-700"><td class="py-2"><code>/implement &lt;cmd&gt;</code></td><td>Add implementation to command</td></tr>
-                                <tr class="border-b border-gray-200 dark:border-gray-700"><td class="py-2"><code>/test &lt;path&gt;</code></td><td>Run tests for generated CLI</td></tr>
-                                <tr class="border-b border-gray-200 dark:border-gray-700"><td class="py-2"><code>/new-cli &lt;desc&gt;</code></td><td>Complete workflow in one command</td></tr>
-                                <tr class="border-b border-gray-200 dark:border-gray-700"><td class="py-2"><code>/add-command &lt;desc&gt;</code></td><td>Add command to existing CLI</td></tr>
-                                <tr><td class="py-2"><code>/save-spec &lt;file&gt;</code></td><td>Save specification to file</td></tr>
-                            </tbody>
-                        </table>
+                <h3 class="text-xl font-semibold mt-8 mb-3">Converting .claude/ to Plugin</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">To convert your existing <code>.claude/</code> customizations to a shareable plugin:</p>
+                <pre><code class="language-bash"># 1. Create plugin directory structure
+mkdir -p cli-generator-plugin/.claude-plugin
+mkdir -p cli-generator-plugin/{commands,agents,skills,hooks}
+
+# 2. Create plugin.json manifest
+cat > cli-generator-plugin/.claude-plugin/plugin.json << 'EOF'
+{
+  "name": "cli-generator",
+  "description": "Generate CLI tools from natural language",
+  "version": "1.0.0",
+  "author": { "name": "Your Name" }
+}
+EOF
+
+# 3. Copy your commands
+cp .claude/commands/*.md cli-generator-plugin/commands/
+
+# 4. Copy your agents
+cp .claude/agents/*.md cli-generator-plugin/agents/
+
+# 5. Copy skills (note: directories with SKILL.md)
+cp -r .claude/skills/* cli-generator-plugin/skills/
+
+# 6. Extract hooks from settings.json to hooks/hooks.json
+# Copy the "hooks" object from .claude/settings.json</code></pre>
+
+                <h3 class="text-xl font-semibold mt-8 mb-3">Hands-On Exercises: Plugins</h3>
+
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 mb-6 border border-blue-200 dark:border-blue-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                        Exercise: Browse Available Plugins
+                    </h4>
+                    <p class="mb-4 text-sm">Open the plugin manager to see what's available:</p>
+                    <pre class="mb-4"><code class="language-bash"># In Claude Code, type:
+/plugin</code></pre>
+                    <p class="mb-3 text-sm"><strong>What you'll see:</strong></p>
+                    <div class="bg-gray-900 text-gray-100 rounded-lg p-4 text-sm font-mono mb-4">
+                        <div class="text-yellow-400">Plugin Manager</div>
+                        <div class="text-gray-400 mt-2">[Discover] [Installed] [Marketplaces]</div>
+                        <div class="text-gray-300 mt-2">Available from claude-plugins-official:</div>
+                        <div class="text-green-400">  figma - Figma design integration</div>
+                        <div class="text-green-400">  claude-mem - Cross-session memory</div>
+                        <div class="text-gray-400 mt-2">Use Tab to switch tabs, Enter to select</div>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400"><strong>Try it:</strong> Navigate through the tabs using Tab key and explore available plugins.</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 mb-6 border border-green-200 dark:border-green-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                        Exercise: Create Your Plugin Directory
+                    </h4>
+                    <p class="mb-4 text-sm">Set up the correct plugin structure:</p>
+                    <pre class="mb-4"><code class="language-bash"># Create plugin directory structure
+mkdir -p my-first-plugin/.claude-plugin
+mkdir -p my-first-plugin/{commands,skills,hooks}
+
+# Create the manifest
+cat > my-first-plugin/.claude-plugin/plugin.json << 'EOF'
+{
+  "name": "my-first-plugin",
+  "description": "A learning exercise plugin",
+  "version": "1.0.0",
+  "author": { "name": "Your Name" }
+}
+EOF
+
+# Verify structure
+find my-first-plugin -type f</code></pre>
+                    <p class="mb-3 text-sm"><strong>Expected output:</strong></p>
+                    <div class="bg-gray-900 text-gray-100 rounded-lg p-4 text-sm font-mono mb-4">
+                        <div class="text-gray-300">my-first-plugin/.claude-plugin/plugin.json</div>
                     </div>
                 </div>
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Requirements File</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-2">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">.claude/plugins/cli-generator/requirements.txt</code>:</p>
-                <pre><code class="language-text">click>=8.1
-rich>=13.0
-pydantic>=2.0
-pydantic-ai>=0.1
-jinja2>=3.1
-httpx>=0.25
-pytest>=7.0
-pytest-asyncio>=0.21
-black>=23.0
-isort>=5.12</code></pre>
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 mb-6 border border-purple-200 dark:border-purple-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
+                        Exercise: Add a Command to Your Plugin
+                    </h4>
+                    <p class="mb-4 text-sm">Create a simple slash command:</p>
+                    <pre class="mb-4"><code class="language-bash"># Create a greeting command
+cat > my-first-plugin/commands/greet.md << 'EOF'
+---
+description: Say hello with a custom message
+arguments:
+  - name: name
+    description: Name to greet
+    required: false
+---
 
-                <h3 class="text-xl font-semibold mt-8 mb-3">Plugin Installation Script</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-2">Create <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">.claude/plugins/cli-generator/install.sh</code>:</p>
-                <pre><code class="language-bash">#!/bin/bash
-# CLI Generator Plugin Installer
+Greet the user warmly. If a name is provided, use it.
+Otherwise, use a friendly generic greeting.
 
-set -e
+Keep the response brief and cheerful.
+EOF
 
-echo "Installing CLI Generator Plugin"
-echo "================================"
+echo "✓ Created greet command"</code></pre>
+                </div>
 
-# Check Python version
-python_version=$(python3 --version 2>&1 | cut -d' ' -f2 | cut -d'.' -f1,2)
-required_version="3.11"
+                <div class="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 mb-6 border border-orange-200 dark:border-orange-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">4</span>
+                        Exercise: Test Your Plugin During Development
+                    </h4>
+                    <p class="mb-4 text-sm">Load your plugin without installing it:</p>
+                    <pre class="mb-4"><code class="language-bash"># Start Claude Code with your plugin loaded
+claude code --plugin-dir ./my-first-plugin</code></pre>
+                    <p class="mb-3 text-sm"><strong>Then in Claude Code, try:</strong></p>
+                    <pre class="mb-4"><code class="language-bash"># Your command is available with the plugin name prefix:
+/my-first-plugin:greet Alice</code></pre>
+                    <div class="bg-yellow-100 dark:bg-yellow-900/30 rounded-lg p-3 mt-4">
+                        <p class="text-sm"><strong>Note:</strong> Restart Claude Code after making changes to your plugin to pick up updates.</p>
+                    </div>
+                </div>
 
-if [ "$(printf '%s\n' "$required_version" "$python_version" | sort -V | head -n1)" != "$required_version" ]; then
-    echo "Error: Python $required_version+ required, found $python_version"
-    exit 1
-fi
+                <div class="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-xl p-6 mb-6 border border-red-200 dark:border-red-800">
+                    <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">5</span>
+                        Exercise: Convert CLI Generator to a Plugin
+                    </h4>
+                    <p class="mb-4 text-sm">Package your CLI generator work as a distributable plugin:</p>
+                    <pre class="mb-4"><code class="language-bash"># Create the plugin structure
+mkdir -p cli-generator-plugin/.claude-plugin
+mkdir -p cli-generator-plugin/{commands,agents,skills,hooks}
 
-echo "✓ Python version: $python_version"
+# Create manifest
+cat > cli-generator-plugin/.claude-plugin/plugin.json << 'EOF'
+{
+  "name": "cli-generator",
+  "description": "Generate CLI tools from natural language descriptions",
+  "version": "1.0.0",
+  "author": { "name": "Your Name" },
+  "repository": "https://github.com/yourusername/cli-generator-plugin"
+}
+EOF
 
-# Check for uv
-if ! command -v uv &> /dev/null; then
-    echo "Installing uv..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-fi
+# Copy your work
+cp .claude/commands/*.md cli-generator-plugin/commands/
+cp .claude/agents/*.md cli-generator-plugin/agents/
+cp -r .claude/skills/* cli-generator-plugin/skills/
 
-echo "✓ uv available"
+# Verify
+echo "Plugin contents:"
+find cli-generator-plugin -name "*.md" -o -name "*.json" | head -20</code></pre>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-4"><strong>Result:</strong> You now have a shareable plugin that others can install!</p>
+                </div>
 
-# Install dependencies
-echo "Installing dependencies..."
-uv pip install -r requirements.txt
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-xl p-6 mb-6">
+                    <h4 class="text-lg font-semibold mb-3">Troubleshooting Plugins</h4>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">Commands not showing up?</p>
+                            <p class="text-gray-600 dark:text-gray-400">Check that <code>plugin.json</code> is inside <code>.claude-plugin/</code> folder (not at root). Commands must be at plugin root level, not inside <code>.claude-plugin/</code>.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">Plugin not loading with --plugin-dir?</p>
+                            <p class="text-gray-600 dark:text-gray-400">Ensure the path points to the plugin root (the folder containing <code>.claude-plugin/</code>). Restart Claude Code after changes.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-red-600 dark:text-red-400">Can't find plugin in /plugin UI?</p>
+                            <p class="text-gray-600 dark:text-gray-400">Plugins must be published to a marketplace to appear in Discover. Use <code>--plugin-dir</code> for local development testing.</p>
+                        </div>
+                    </div>
+                </div>
 
-echo "✓ Dependencies installed"
-
-# Check for API key
-if [ -z "$OPENAI_API_KEY" ]; then
-    echo ""
-    echo "⚠️  Warning: OPENAI_API_KEY not set"
-    echo "   Set it with: export OPENAI_API_KEY=your_key"
-fi
-
-# Create necessary directories
-mkdir -p ../../../commands
-mkdir -p ../../../hooks
-mkdir -p ../../../skills
-mkdir -p ../../../subagents
-mkdir -p ../../../mcp
-
-echo ""
-echo "✓ Installation complete!"
-echo ""
-echo "Next steps:"
-echo "  1. Set OPENAI_API_KEY if not already set"
-echo "  2. Start Claude Code in your project"
-echo "  3. Try: /design \"A simple test CLI\""</code></pre>
-
-                <h3 class="text-xl font-semibold mt-8 mb-3">✅ Day 10 Checklist</h3>
+                <h3 class="text-xl font-semibold mt-8 mb-3">Day 10 Checklist</h3>
                 <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                    <p class="font-semibold mb-2 text-sm">Integration Testing:</p>
-                    <div class="checklist-item"><input type="checkbox" id="d10-1" @change="saveChecklist('d10-1', $event.target.checked)" :checked="checklist['d10-1']"><label for="d10-1">End-to-end integration tests passing</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-2" @change="saveChecklist('d10-2', $event.target.checked)" :checked="checklist['d10-2']"><label for="d10-2">Hook and skill integration tests passing</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-3" @change="saveChecklist('d10-3', $event.target.checked)" :checked="checklist['d10-3']"><label for="d10-3">Golden tests for regression prevention</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-4" @change="saveChecklist('d10-4', $event.target.checked)" :checked="checklist['d10-4']"><label for="d10-4">Full workflow tested: description → working CLI</label></div>
-                    <p class="font-semibold mb-2 mt-4 text-sm">Plugin Packaging:</p>
-                    <div class="checklist-item"><input type="checkbox" id="d10-5" @change="saveChecklist('d10-5', $event.target.checked)" :checked="checklist['d10-5']"><label for="d10-5">Plugin directory structure created</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-6" @change="saveChecklist('d10-6', $event.target.checked)" :checked="checklist['d10-6']"><label for="d10-6">plugin.yaml manifest complete</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-7" @change="saveChecklist('d10-7', $event.target.checked)" :checked="checklist['d10-7']"><label for="d10-7">Installation instructions and README complete</label></div>
-                    <div class="checklist-item"><input type="checkbox" id="d10-8" @change="saveChecklist('d10-8', $event.target.checked)" :checked="checklist['d10-8']"><label for="d10-8">Test plugin installation in fresh project</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-1" @change="saveChecklist('d10-1', $event.target.checked)" :checked="checklist['d10-1']"><label for="d10-1">Understand plugin structure (.claude-plugin/plugin.json)</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-2" @change="saveChecklist('d10-2', $event.target.checked)" :checked="checklist['d10-2']"><label for="d10-2">Created plugin.json manifest with required fields</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-3" @change="saveChecklist('d10-3', $event.target.checked)" :checked="checklist['d10-3']"><label for="d10-3">Used /plugin command to browse available plugins</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-4" @change="saveChecklist('d10-4', $event.target.checked)" :checked="checklist['d10-4']"><label for="d10-4">Created a simple test plugin with a command</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-5" @change="saveChecklist('d10-5', $event.target.checked)" :checked="checklist['d10-5']"><label for="d10-5">Tested plugin with --plugin-dir flag</label></div>
+                    <div class="checklist-item"><input type="checkbox" id="d10-6" @change="saveChecklist('d10-6', $event.target.checked)" :checked="checklist['d10-6']"><label for="d10-6">Converted CLI generator to plugin format</label></div>
                 </div>
                 <div class="flex justify-end mt-6"><button @click="toggleDay(10)" :class="completedDays.includes(10) ? 'bg-green-500' : 'bg-primary'" class="px-6 py-2 text-white rounded-lg hover:opacity-90"><span x-text="completedDays.includes(10) ? 'Completed!' : 'Mark as Complete'"></span></button></div>
             </section>
@@ -7596,11 +7067,11 @@ tasks export --format json > backup.json</code></pre>
                     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
                         <h4 class="font-semibold mb-4 text-lg">Plugin</h4>
                         <ul class="list-disc list-inside text-sm space-y-2">
-                            <li>plugin.yaml complete</li>
-                            <li>install.md accurate</li>
-                            <li>requirements.txt up to date</li>
-                            <li>Installation script working</li>
-                            <li>Test in fresh project</li>
+                            <li>.claude-plugin/plugin.json complete</li>
+                            <li>README.md with installation instructions</li>
+                            <li>Commands at plugin root level</li>
+                            <li>hooks/hooks.json configured</li>
+                            <li>Test with --plugin-dir flag</li>
                         </ul>
                     </div>
                     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -8590,13 +8061,16 @@ ENTRYPOINT ["my-cli"]</code></pre>
                 notes: {},
                 showNotesPanel: false,
                 editingNoteId: null,
-                dayTitles: { 1: 'Project Setup', 2: 'Core Models', 3: 'Slash Commands', 4: 'Command Chaining', 5: 'Claude Code Hooks', 6: 'Context-Aware Skills', 7: 'Subagent Coordination', 8: 'MCP External Tools', 9: 'Memory & Context', 10: 'Testing & Packaging', 11: 'Documentation', 12: 'Documentation', 13: 'Final Testing', 14: 'Release' },
+                dayTitles: { 1: 'Project Setup', 2: 'Core Models', 3: 'Slash Commands', 4: 'Command Chaining', 5: 'Claude Code Hooks', 6: 'Context-Aware Skills', 7: 'Subagent Coordination', 8: 'MCP External Tools', 9: 'Memory & Context', 10: 'Plugin Packaging', 11: 'Documentation', 12: 'Documentation', 13: 'Final Testing', 14: 'Release' },
                 init() {
                     // Load saved data
                     this.completedDays = JSON.parse(localStorage.getItem('tutorial-completed-days') || '[]');
                     this.checklist = JSON.parse(localStorage.getItem('tutorial-checklist') || '{}');
                     this.bookmarks = JSON.parse(localStorage.getItem('tutorial-bookmarks') || '[]');
                     this.notes = JSON.parse(localStorage.getItem('tutorial-notes') || '{}');
+
+                    // Auto-expand weeks based on progress
+                    this.updateWeekExpansion();
 
                     // Dark mode: check localStorage first, then system preference
                     const savedDarkMode = localStorage.getItem('tutorial-dark-mode');
@@ -8610,6 +8084,31 @@ ENTRYPOINT ["my-cli"]</code></pre>
                         this.setupSubsectionBookmarks();
                         this.setupDayHeaderNotes();
                     });
+                },
+                updateWeekExpansion() {
+                    // Determine the highest day with any progress
+                    const maxCompletedDay = this.completedDays.length > 0
+                        ? Math.max(...this.completedDays)
+                        : 0;
+
+                    // Also check checklist for partial progress on days
+                    let maxChecklistDay = 0;
+                    Object.keys(this.checklist).forEach(key => {
+                        if (this.checklist[key]) {
+                            const match = key.match(/^d(\d+)-/);
+                            if (match) {
+                                maxChecklistDay = Math.max(maxChecklistDay, parseInt(match[1]));
+                            }
+                        }
+                    });
+
+                    const currentDay = Math.max(maxCompletedDay, maxChecklistDay, 1);
+
+                    // Week 1: Days 1-5, Week 2: Days 6-10, Week 3: Days 11-14
+                    // Expand all completed weeks plus the current week
+                    this.week1Open = true; // Always show Week 1
+                    this.week2Open = currentDay >= 5 || this.completedDays.some(d => d >= 6);
+                    this.week3Open = currentDay >= 10 || this.completedDays.some(d => d >= 11);
                 },
                 setupDayHeaderNotes() {
                     // Add note buttons to day section h2 headers
