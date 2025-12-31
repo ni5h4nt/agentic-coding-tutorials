@@ -28,12 +28,22 @@ test suites for generated CLI applications.
 - **Integration**: Full CLI invocation tests
 
 ## Output Format
-Generate tests in this structure:
+Generate tests in this structure (at project root, alongside pyproject.toml):
 ```
-tests/
-├── conftest.py      # Shared fixtures
-├── test_cli.py      # Main CLI tests (--help, --version)
-└── test_<cmd>.py    # Per-command tests
+<project_dir>/
+├── pyproject.toml
+├── <package_name>/     # The CLI source code
+│   ├── cli.py
+│   └── commands/
+└── tests/              # Tests at root level, NOT inside package
+    ├── conftest.py     # Shared fixtures
+    ├── test_cli.py     # Main CLI tests (--help, --version)
+    └── test_<cmd>.py   # Per-command tests
+```
+
+**IMPORTANT**: Import from the package correctly in tests:
+```python
+from <package_name>.cli import cli  # e.g., from notes_cli.cli import cli
 ```
 
 ## Constraints

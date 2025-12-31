@@ -3173,15 +3173,19 @@ Run validators:
 - [ ] All required fields present
 
 ### 3. Generate Code
-Using CodeGenerator, create:
-- `&lt;name&gt;/cli.py` - Main CLI with all commands
-- `&lt;name&gt;/__init__.py` - Package init
-- `pyproject.toml` - Project configuration
-- `README.md` - Documentation
+Using CodeGenerator, create with **nested package structure**:
+- `pyproject.toml` - Project configuration (at root)
+- `README.md` - Documentation (at root)
+- `&lt;package_name&gt;/cli.py` - Main CLI with all commands
+- `&lt;package_name&gt;/__init__.py` - Package init with version
+- `&lt;package_name&gt;/commands/` - Command implementations
 
 If --with-tests:
-- `tests/test_cli.py` - CLI tests
+- `tests/test_cli.py` - CLI tests (at root, not inside package)
 - `tests/conftest.py` - Test fixtures
+
+**IMPORTANT**: Source files MUST be in a nested `&lt;package_name&gt;/` directory,
+not at the root alongside pyproject.toml, or `pip install -e .` will fail.
 
 ### 4. Report Results
 ```
@@ -3189,10 +3193,11 @@ Generated CLI: &lt;name&gt;
 ====================
 
 Files created:
-  ✓ &lt;name&gt;/cli.py (XX lines)
-  ✓ &lt;name&gt;/__init__.py
   ✓ pyproject.toml
   ✓ README.md
+  ✓ &lt;package_name&gt;/__init__.py
+  ✓ &lt;package_name&gt;/cli.py (XX lines)
+  ✓ &lt;package_name&gt;/commands/
 
 Quick start:
   cd &lt;output_path&gt;
@@ -5393,13 +5398,33 @@ into working Python code using the Click framework.
 - Proper error handling with click.ClickException
 
 ## Output Format
-Generate files in this structure:
+Generate files with a **nested Python package structure** (CRITICAL for pip install to work):
 ```
-&lt;cli_name&gt;/
-├── __init__.py
-├── cli.py          # Main CLI with @click.group()
-├── commands/       # One file per command (optional)
-└── pyproject.toml  # Package configuration
+&lt;project_dir&gt;/              # e.g., generated/my_cli/
+├── pyproject.toml          # Package config (at root, NOT inside package)
+├── README.md               # Documentation
+├── &lt;package_name&gt;/         # Inner package dir (e.g., my_cli/)
+│   ├── __init__.py         # With __version__
+│   ├── cli.py              # Main CLI with @click.group()
+│   ├── utils.py            # Shared utilities
+│   └── commands/           # One file per command
+│       ├── __init__.py
+│       └── &lt;command&gt;.py
+└── tests/                  # Test directory at root level
+```
+
+**IMPORTANT**: The Python source files (__init__.py, cli.py, commands/) MUST be inside
+a nested package directory, NOT at the root alongside pyproject.toml. This is required
+for `pip install -e .` to work correctly.
+
+Example for a CLI named "notes-cli":
+```
+generated/notes_cli/        # Project root
+├── pyproject.toml          # [project.scripts] notes-cli = "notes_cli.cli:main"
+├── notes_cli/              # &lt;-- Inner package (REQUIRED!)
+│   ├── __init__.py
+│   ├── cli.py
+│   └── commands/
 ```
 
 ## Constraints
@@ -5439,12 +5464,22 @@ test suites for generated CLI applications.
 - **Integration**: Full CLI invocation tests
 
 ## Output Format
-Generate tests in this structure:
+Generate tests in this structure (at project root, alongside pyproject.toml):
 ```
-tests/
-├── conftest.py      # Shared fixtures
-├── test_cli.py      # Main CLI tests (--help, --version)
-└── test_&lt;cmd&gt;.py    # Per-command tests
+&lt;project_dir&gt;/
+├── pyproject.toml
+├── &lt;package_name&gt;/     # The CLI source code
+│   ├── cli.py
+│   └── commands/
+└── tests/              # Tests at root level, NOT inside package
+    ├── conftest.py     # Shared fixtures
+    ├── test_cli.py     # Main CLI tests (--help, --version)
+    └── test_&lt;cmd&gt;.py   # Per-command tests
+```
+
+**IMPORTANT**: Import from the package correctly in tests:
+```python
+from &lt;package_name&gt;.cli import cli  # e.g., from notes_cli.cli import cli
 ```
 
 ## Constraints
