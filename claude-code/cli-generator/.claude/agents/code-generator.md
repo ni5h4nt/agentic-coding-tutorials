@@ -29,13 +29,33 @@ into working Python code using the Click framework.
 - Proper error handling with click.ClickException
 
 ## Output Format
-Generate files in this structure:
+Generate files with a **nested Python package structure** (CRITICAL for pip install to work):
 ```
-<cli_name>/
-├── __init__.py
-├── cli.py          # Main CLI with @click.group()
-├── commands/       # One file per command (optional)
-└── pyproject.toml  # Package configuration
+<project_dir>/              # e.g., generated/my_cli/
+├── pyproject.toml          # Package config (at root, NOT inside package)
+├── README.md               # Documentation
+├── <package_name>/         # Inner package dir (e.g., my_cli/)
+│   ├── __init__.py         # With __version__
+│   ├── cli.py              # Main CLI with @click.group()
+│   ├── utils.py            # Shared utilities
+│   └── commands/           # One file per command
+│       ├── __init__.py
+│       └── <command>.py
+└── tests/                  # Test directory at root level
+```
+
+**IMPORTANT**: The Python source files (__init__.py, cli.py, commands/) MUST be inside
+a nested package directory, NOT at the root alongside pyproject.toml. This is required
+for `pip install -e .` to work correctly.
+
+Example for a CLI named "notes-cli":
+```
+generated/notes_cli/        # Project root
+├── pyproject.toml          # [project.scripts] notes-cli = "notes_cli.cli:main"
+├── notes_cli/              # <-- Inner package (REQUIRED!)
+│   ├── __init__.py
+│   ├── cli.py
+│   └── commands/
 ```
 
 ## Constraints
